@@ -1,5 +1,8 @@
 name: 🤖 Auto-Fix Bot
 
+# This is a demonstration workflow showing visual output for Auto-Fix Bot
+# In a production environment, replace echo commands with actual autofix-bot CLI commands
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]

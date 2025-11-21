@@ -4,7 +4,9 @@
 
 ### 案例 1: JavaScript 語法錯誤自動修復
 
-#### 問題代碼
+#### 問題代碼（修復前）
+> ⚠️ 注意：以下代碼包含故意製造的錯誤，用於演示 Auto-Fix Bot 的修復能力
+
 ```javascript
 // app.js - 有多個語法錯誤
 function calculateTotal(items) {
