@@ -302,11 +302,11 @@ class SecurityScanner {
   _detectInsecureCrypto(code) {
     const vulnerabilities = [];
     
-    if (/md5|sha1(?!\\d)/gi.test(code)) {
+    if (/md5|sha1(?!\d)/gi.test(code)) {
       vulnerabilities.push({
         type: 'Weak Cryptographic Hash',
         severity: 'medium',
-        line: this._findLineNumber(code, code.search(/md5|sha1(?!\\d)/gi)),
+        line: this._findLineNumber(code, code.search(/md5|sha1(?!\d)/gi)),
         code: 'MD5/SHA1 usage',
         description: 'Use of weak cryptographic hash function',
         remediation: 'Use SHA-256 or stronger hash functions',
