@@ -102,7 +102,7 @@ class DeploymentValidator {
   /**
    * Check required files exist
    */
-  async _checkRequiredFiles(basePath) {
+  _checkRequiredFiles(basePath) {
     const check = {
       name: 'Required Files Check',
       passed: true,

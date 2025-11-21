@@ -380,7 +380,7 @@ class SecurityScanner {
     return vulnerabilities;
   }
 
-  _checkDependencyVulnerabilities(dep, ecosystem) {
+  _checkDependencyVulnerabilities(dep, _ecosystem) {
     // Simulated vulnerability database
     const knownVulnerabilities = {
       'lodash': {
@@ -452,7 +452,9 @@ class SecurityScanner {
   }
 
   _maskSecret(secret) {
-    if (secret.length <= 8) return '***';
+    if (secret.length <= 8) {
+return '***';
+}
     return secret.substring(0, 4) + '***' + secret.substring(secret.length - 4);
   }
 
@@ -478,7 +480,7 @@ async function main() {
     }
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: [
       {
         name: 'scan-vulnerabilities',
@@ -527,7 +529,7 @@ async function main() {
     ]
   }));
 
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {

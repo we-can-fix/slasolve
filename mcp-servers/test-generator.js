@@ -22,7 +22,7 @@ import { z } from 'zod';
 // Validation schemas
 const GenerateUnitTestsSchema = z.object({
   code: z.string().min(1, 'Code content is required'),
-  framework: z.enum(['jest', 'mocha', 'vitest']).optional().default('jest'),
+  _framework: z.enum(['jest', 'mocha', 'vitest']).optional().default('jest'),
   coverage: z.enum(['basic', 'comprehensive', 'exhaustive']).optional().default('comprehensive')
 });
 
@@ -32,7 +32,7 @@ const GenerateIntegrationTestsSchema = z.object({
     path: z.string(),
     description: z.string().optional()
   })).min(1, 'At least one endpoint is required'),
-  framework: z.enum(['jest', 'supertest', 'chai']).optional().default('jest')
+  _framework: z.enum(['jest', 'supertest', 'chai']).optional().default('jest')
 });
 
 const GenerateE2ETestsSchema = z.object({
@@ -41,7 +41,7 @@ const GenerateE2ETestsSchema = z.object({
     steps: z.array(z.string()),
     assertions: z.array(z.string()).optional()
   })).min(1, 'At least one scenario is required'),
-  framework: z.enum(['playwright', 'cypress', 'puppeteer']).optional().default('playwright')
+  _framework: z.enum(['playwright', 'cypress', 'puppeteer']).optional().default('playwright')
 });
 
 /**
@@ -51,31 +51,31 @@ class TestGenerator {
   /**
    * Generate unit tests
    */
-  generateUnitTests(code, framework = 'jest', coverage = 'comprehensive') {
+  generateUnitTests(code, _framework = 'jest', coverage = 'comprehensive') {
     const functions = this._extractFunctions(code);
     const classes = this._extractClasses(code);
     
     const tests = {
-      framework,
+      _framework,
       totalTests: 0,
       testSuites: []
     };
 
     // Generate tests for functions
     for (const func of functions) {
-      const suite = this._generateFunctionTests(func, framework, coverage);
+      const suite = this._generateFunctionTests(func, _framework, coverage);
       tests.testSuites.push(suite);
       tests.totalTests += suite.tests.length;
     }
 
     // Generate tests for classes
     for (const cls of classes) {
-      const suite = this._generateClassTests(cls, framework, coverage);
+      const suite = this._generateClassTests(cls, _framework, coverage);
       tests.testSuites.push(suite);
       tests.totalTests += suite.tests.length;
     }
 
-    tests.code = this._generateTestCode(tests, framework);
+    tests.code = this._generateTestCode(tests, _framework);
 
     return tests;
   }
@@ -83,9 +83,9 @@ class TestGenerator {
   /**
    * Generate integration tests
    */
-  generateIntegrationTests(endpoints, framework = 'jest') {
+  generateIntegrationTests(endpoints, _framework = 'jest') {
     const tests = {
-      framework,
+      _framework,
       totalTests: 0,
       testSuites: []
     };
@@ -94,12 +94,12 @@ class TestGenerator {
     const grouped = this._groupEndpointsByResource(endpoints);
 
     for (const [resource, resourceEndpoints] of Object.entries(grouped)) {
-      const suite = this._generateEndpointTests(resource, resourceEndpoints, framework);
+      const suite = this._generateEndpointTests(resource, resourceEndpoints, _framework);
       tests.testSuites.push(suite);
       tests.totalTests += suite.tests.length;
     }
 
-    tests.code = this._generateIntegrationTestCode(tests, framework);
+    tests.code = this._generateIntegrationTestCode(tests, _framework);
 
     return tests;
   }
@@ -107,19 +107,19 @@ class TestGenerator {
   /**
    * Generate end-to-end tests
    */
-  generateE2ETests(scenarios, framework = 'playwright') {
+  generateE2ETests(scenarios, _framework = 'playwright') {
     const tests = {
-      framework,
+      _framework,
       totalTests: scenarios.length,
       testSuites: []
     };
 
     for (const scenario of scenarios) {
-      const suite = this._generateScenarioTest(scenario, framework);
+      const suite = this._generateScenarioTest(scenario, _framework);
       tests.testSuites.push(suite);
     }
 
-    tests.code = this._generateE2ETestCode(tests, framework);
+    tests.code = this._generateE2ETestCode(tests, _framework);
 
     return tests;
   }
@@ -168,7 +168,9 @@ class TestGenerator {
 
   _extractParameters(code, startIndex) {
     const paramMatch = code.substring(startIndex).match(/\(([^)]*)\)/);
-    if (!paramMatch) return [];
+    if (!paramMatch) {
+return [];
+}
     
     return paramMatch[1]
       .split(',')
@@ -197,7 +199,9 @@ class TestGenerator {
           depth++;
         }
       } else if (classCode[i] === '}') {
-        if (depth === 0) break;
+        if (depth === 0) {
+break;
+}
         depth--;
       }
     }
@@ -217,14 +221,14 @@ class TestGenerator {
     return methods;
   }
 
-  _generateFunctionTests(func, framework, coverage) {
+  _generateFunctionTests(func, _framework, coverage) {
     const tests = [];
     
     // Happy path test
     tests.push({
       name: `should ${func.name} successfully with valid input`,
       type: 'happy-path',
-      code: this._generateHappyPathTest(func, framework)
+      code: this._generateHappyPathTest(func, _framework)
     });
 
     if (coverage !== 'basic') {
@@ -232,14 +236,14 @@ class TestGenerator {
       tests.push({
         name: `should handle edge cases for ${func.name}`,
         type: 'edge-case',
-        code: this._generateEdgeCaseTest(func, framework)
+        code: this._generateEdgeCaseTest(func, _framework)
       });
 
       // Error handling tests
       tests.push({
         name: `should handle errors in ${func.name}`,
         type: 'error-handling',
-        code: this._generateErrorTest(func, framework)
+        code: this._generateErrorTest(func, _framework)
       });
     }
 
@@ -249,7 +253,7 @@ class TestGenerator {
         tests.push({
           name: `should validate ${param.name} parameter`,
           type: 'validation',
-          code: this._generateValidationTest(func, param, framework)
+          code: this._generateValidationTest(func, param, _framework)
         });
       }
     }
@@ -261,14 +265,14 @@ class TestGenerator {
     };
   }
 
-  _generateClassTests(cls, framework, coverage) {
+  _generateClassTests(cls, _framework, coverage) {
     const tests = [];
     
     // Constructor test
     tests.push({
       name: `should create instance of ${cls.name}`,
       type: 'constructor',
-      code: this._generateConstructorTest(cls, framework)
+      code: this._generateConstructorTest(cls, _framework)
     });
 
     // Method tests
@@ -276,14 +280,14 @@ class TestGenerator {
       tests.push({
         name: `should ${method.name} correctly`,
         type: 'method',
-        code: this._generateMethodTest(cls, method, framework)
+        code: this._generateMethodTest(cls, method, _framework)
       });
 
       if (coverage !== 'basic') {
         tests.push({
           name: `should handle ${method.name} errors`,
           type: 'error-handling',
-          code: this._generateMethodErrorTest(cls, method, framework)
+          code: this._generateMethodErrorTest(cls, method, _framework)
         });
       }
     }
@@ -295,7 +299,7 @@ class TestGenerator {
     };
   }
 
-  _generateHappyPathTest(func, framework) {
+  _generateHappyPathTest(func, _framework) {
     const testParams = func.params.map(p => `'test-${p.name}'`).join(', ');
     
     return `test('${func.name} should work with valid input', ${func.isAsync ? 'async ' : ''}() => {
@@ -305,7 +309,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateEdgeCaseTest(func, framework) {
+  _generateEdgeCaseTest(func, _framework) {
     return `test('${func.name} should handle edge cases', ${func.isAsync ? 'async ' : ''}() => {
   // Test with empty values
   const result1 = ${func.isAsync ? 'await ' : ''}${func.name}(${func.params.map(() => "''").join(', ')});
@@ -317,13 +321,13 @@ class TestGenerator {
 });`;
   }
 
-  _generateErrorTest(func, framework) {
+  _generateErrorTest(func, _framework) {
     return `test('${func.name} should handle errors gracefully', ${func.isAsync ? 'async ' : ''}() => {
   ${func.isAsync ? 'await ' : ''}expect(${func.isAsync ? 'async () => ' : ''}${func.name}(${func.params.map(() => 'null').join(', ')}))${func.isAsync ? '.rejects' : ''}.toThrow();
 });`;
   }
 
-  _generateValidationTest(func, param, framework) {
+  _generateValidationTest(func, param, _framework) {
     return `test('${func.name} should validate ${param.name} parameter', ${func.isAsync ? 'async ' : ''}() => {
   const invalidValues = [null, undefined, '', 0, false];
   
@@ -333,7 +337,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateConstructorTest(cls, framework) {
+  _generateConstructorTest(cls, _framework) {
     return `test('should create ${cls.name} instance', () => {
   const instance = new ${cls.name}();
   expect(instance).toBeInstanceOf(${cls.name});
@@ -341,7 +345,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateMethodTest(cls, method, framework) {
+  _generateMethodTest(cls, method, _framework) {
     return `test('${cls.name}.${method.name} should work correctly', ${method.isAsync ? 'async ' : ''}() => {
   const instance = new ${cls.name}();
   const result = ${method.isAsync ? 'await ' : ''}instance.${method.name}();
@@ -349,7 +353,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateMethodErrorTest(cls, method, framework) {
+  _generateMethodErrorTest(cls, method, _framework) {
     return `test('${cls.name}.${method.name} should handle errors', ${method.isAsync ? 'async ' : ''}() => {
   const instance = new ${cls.name}();
   ${method.isAsync ? 'await ' : ''}expect(${method.isAsync ? 'async () => ' : ''}instance.${method.name}(null))${method.isAsync ? '.rejects' : ''}.toThrow();
@@ -370,7 +374,7 @@ class TestGenerator {
     return grouped;
   }
 
-  _generateEndpointTests(resource, endpoints, framework) {
+  _generateEndpointTests(resource, endpoints, _framework) {
     const tests = [];
 
     for (const endpoint of endpoints) {
@@ -378,14 +382,14 @@ class TestGenerator {
       tests.push({
         name: `${endpoint.method} ${endpoint.path} should return 200`,
         type: 'success',
-        code: this._generateEndpointSuccessTest(endpoint, framework)
+        code: this._generateEndpointSuccessTest(endpoint, _framework)
       });
 
       // Error test
       tests.push({
         name: `${endpoint.method} ${endpoint.path} should handle errors`,
         type: 'error',
-        code: this._generateEndpointErrorTest(endpoint, framework)
+        code: this._generateEndpointErrorTest(endpoint, _framework)
       });
 
       // Validation test
@@ -393,7 +397,7 @@ class TestGenerator {
         tests.push({
           name: `${endpoint.method} ${endpoint.path} should validate input`,
           type: 'validation',
-          code: this._generateEndpointValidationTest(endpoint, framework)
+          code: this._generateEndpointValidationTest(endpoint, _framework)
         });
       }
     }
@@ -405,7 +409,7 @@ class TestGenerator {
     };
   }
 
-  _generateEndpointSuccessTest(endpoint, framework) {
+  _generateEndpointSuccessTest(endpoint, _framework) {
     const method = endpoint.method.toLowerCase();
     return `test('${endpoint.method} ${endpoint.path} should succeed', async () => {
   const response = await request(app)
@@ -418,7 +422,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateEndpointErrorTest(endpoint, framework) {
+  _generateEndpointErrorTest(endpoint, _framework) {
     return `test('${endpoint.method} ${endpoint.path} should handle errors', async () => {
   const response = await request(app)
     .${endpoint.method.toLowerCase()}('${endpoint.path}')
@@ -429,7 +433,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateEndpointValidationTest(endpoint, framework) {
+  _generateEndpointValidationTest(endpoint, _framework) {
     return `test('${endpoint.method} ${endpoint.path} should validate input', async () => {
   const invalidData = {};
   
@@ -442,7 +446,7 @@ class TestGenerator {
 });`;
   }
 
-  _generateScenarioTest(scenario, framework) {
+  _generateScenarioTest(scenario, _framework) {
     const steps = scenario.steps.map((step, index) => 
       `  // Step ${index + 1}: ${step}\n  await page.click('/* selector */');\n  await page.waitForTimeout(1000);`
     ).join('\n');
@@ -466,8 +470,8 @@ ${assertions}
     };
   }
 
-  _generateTestCode(tests, framework) {
-    const imports = this._getFrameworkImports(framework);
+  _generateTestCode(tests, _framework) {
+    const imports = this._getFrameworkImports(_framework);
     const suites = tests.testSuites.map(suite => 
       `describe('${suite.name}', () => {
 ${suite.tests.map(t => '  ' + t.code).join('\n\n')}
@@ -477,7 +481,7 @@ ${suite.tests.map(t => '  ' + t.code).join('\n\n')}
     return `${imports}\n\n${suites}`;
   }
 
-  _generateIntegrationTestCode(tests, framework) {
+  _generateIntegrationTestCode(tests, _framework) {
     const imports = `import request from 'supertest';
 import { app } from '../server';
 
@@ -491,8 +495,8 @@ ${suite.tests.map(t => '  ' + t.code).join('\n\n')}
     return `${imports}\n${suites}`;
   }
 
-  _generateE2ETestCode(tests, framework) {
-    const imports = framework === 'playwright' 
+  _generateE2ETestCode(tests, _framework) {
+    const imports = _framework === 'playwright' 
       ? "import { test, expect } from '@playwright/test';\n\n"
       : "import { describe, it, expect } from 'vitest';\n\n";
 
@@ -503,14 +507,14 @@ ${suite.tests.map(t => '  ' + t.code).join('\n\n')}
     return `${imports}${suites}`;
   }
 
-  _getFrameworkImports(framework) {
+  _getFrameworkImports(_framework) {
     const imports = {
       jest: "import { describe, test, expect } from '@jest/globals';",
       mocha: "import { describe, it } from 'mocha';\nimport { expect } from 'chai';",
       vitest: "import { describe, test, expect } from 'vitest';"
     };
 
-    return imports[framework] || imports.jest;
+    return imports[_framework] || imports.jest;
   }
 }
 
@@ -532,7 +536,7 @@ async function main() {
   );
 
   // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: [
       {
         name: 'generate-unit-tests',
@@ -544,10 +548,10 @@ async function main() {
               type: 'string',
               description: 'The source code to generate tests for'
             },
-            framework: {
+            _framework: {
               type: 'string',
               enum: ['jest', 'mocha', 'vitest'],
-              description: 'Testing framework',
+              description: 'Testing _framework',
               default: 'jest'
             },
             coverage: {
@@ -579,10 +583,10 @@ async function main() {
               },
               description: 'API endpoints to test'
             },
-            framework: {
+            _framework: {
               type: 'string',
               enum: ['jest', 'supertest', 'chai'],
-              description: 'Testing framework',
+              description: 'Testing _framework',
               default: 'jest'
             }
           },
@@ -614,10 +618,10 @@ async function main() {
               },
               description: 'Test scenarios to implement'
             },
-            framework: {
+            _framework: {
               type: 'string',
               enum: ['playwright', 'cypress', 'puppeteer'],
-              description: 'E2E testing framework',
+              description: 'E2E testing _framework',
               default: 'playwright'
             }
           },
@@ -628,7 +632,7 @@ async function main() {
   }));
 
   // Handle tool calls
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
@@ -637,7 +641,7 @@ async function main() {
           const validated = GenerateUnitTestsSchema.parse(args);
           const result = generator.generateUnitTests(
             validated.code,
-            validated.framework,
+            validated._framework,
             validated.coverage
           );
           return {
@@ -654,7 +658,7 @@ async function main() {
           const validated = GenerateIntegrationTestsSchema.parse(args);
           const result = generator.generateIntegrationTests(
             validated.endpoints,
-            validated.framework
+            validated._framework
           );
           return {
             content: [
@@ -670,7 +674,7 @@ async function main() {
           const validated = GenerateE2ETestsSchema.parse(args);
           const result = generator.generateE2ETests(
             validated.scenarios,
-            validated.framework
+            validated._framework
           );
           return {
             content: [
