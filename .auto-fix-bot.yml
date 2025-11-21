@@ -1,7 +1,42 @@
 # Auto-Fix Bot Configuration File
 # 項目配置文件
+#
+# Metadata & Quality Baseline (第一層：元數據與質量基線)
+# ============================================================
+# version: 配置文件格式版本
+# schema_validation: 第二層將引入 JSON Schema 驗證
+# test_vectors: 第二層將添加測試向量
+# lifecycle_hooks: 第三層將實現生命週期鉤子
+#
+# 設計理念：
+# - 製程質量優先：每個配置都經過深思熟慮
+# - 圖譜式疊加：在此基線上層層增強
+# - 可觀察驗證：每次變更都可見、可測試
+# - 保持整體性：避免碎片化配置
 
 version: "1.0"
+
+# 配置元數據 (Configuration Metadata)
+metadata:
+  schema_version: "1.0"
+  created_at: "2025-11-21"
+  updated_at: "2025-11-21"
+  author: "Auto-Fix Bot Team"
+  
+  # 驗證意圖 (Validation Intent)
+  validation:
+    purpose: "確保 Auto-Fix Bot 項目配置的正確性和完整性"
+    required_checks:
+      - "rule configuration validation"
+      - "path exclusion verification"
+      - "integration settings check"
+    
+  # 質量目標 (Quality Objectives)  
+  quality:
+    completeness: "所有分析規則和修復策略已定義"
+    consistency: "配置與項目需求保持一致"
+    maintainability: "易於理解和維護"
+
 project:
   name: "slasolve"
   description: "SLA Solve - Auto-Fix Bot Integration"
@@ -16,29 +51,55 @@ settings:
   create_pr: true
   branch_prefix: "auto-fix/"
   
-# 分析配置
+# 分析配置 (Analysis Configuration)
+# ============================================================
+# 驗證要點 (Validation Points):
+# - 每個 rule 必須有 name 和 enabled 屬性
+# - threshold 值必須為正整數
+# - severity 列表不能為空
+#
+# 質量目標 (Quality Objectives):
+# - 全面性：覆蓋代碼質量的所有關鍵維度
+# - 平衡性：避免過度嚴格或過度寬鬆
+# - 可操作性：每個規則都有明確的修復指引
 analysis:
   enabled: true
   
-  # 分析規則
+  # 分析規則 (Analysis Rules)
+  # 設計理念：多維度代碼質量檢查
   rules:
+    # 複雜度分析 (Complexity Analysis)
+    # 驗證：threshold > 0，典型範圍 5-20
+    # 目的：識別過度複雜的函數和類
     - name: "complexity"
       enabled: true
-      threshold: 10
+      threshold: 10  # 循環複雜度閾值
       
+    # 安全性分析 (Security Analysis)
+    # 驗證：severity 列表不能為空
+    # 目的：檢測常見安全漏洞 (SQL注入、XSS、CSRF等)
     - name: "security"
       enabled: true
       severity: ["critical", "high", "medium"]
       
+    # 性能分析 (Performance Analysis)
+    # 驗證：至少啟用一種檢查類型
+    # 目的：優化算法效率和記憶體使用
     - name: "performance"
       enabled: true
-      check_algorithms: true
-      check_memory: true
+      check_algorithms: true  # 檢查算法時間複雜度
+      check_memory: true      # 檢查記憶體洩漏風險
       
+    # 代碼風格 (Code Style)
+    # 驗證：enforce_standard 必須為布爾值
+    # 目的：統一代碼風格，提高可讀性
     - name: "style"
       enabled: true
       enforce_standard: true
       
+    # 文檔完整性 (Documentation Completeness)
+    # 驗證：require_docstrings 必須為布爾值
+    # 目的：確保所有公共 API 都有文檔
     - name: "documentation"
       enabled: true
       require_docstrings: true

@@ -1,9 +1,43 @@
 # Cloud Agent Delegation Configuration
 # 雲端代理程式委派配置
+#
+# Metadata & Quality Baseline (第一層：元數據與質量基線)
+# ============================================================
+# version: 配置文件格式版本，遵循語義化版本
+# schema_validation: 預期在第二層引入 JSON Schema 驗證
+# provenance: 配置來源追溯，符合 SLSA L3 要求
+# changelog: 版本變更歷史（圖譜式疊加的基礎）
+#
+# 設計理念：
+# - 單一責任：此文件專注於雲端委派策略配置
+# - 可驗證性：每個配置值都有明確意圖和驗證標準
+# - 可追溯性：所有變更可回溯到具體需求
+# - 最小調整：在現有結構上漸進增強
 
 version: "1.0"
 name: "auto-fix-bot-cloud-delegation"
 description: "Auto-Fix Bot 雲端代理程式委派系統配置"
+
+# 配置元數據 (Configuration Metadata)
+metadata:
+  schema_version: "1.0"
+  created_at: "2025-11-21"
+  updated_at: "2025-11-21"
+  author: "Auto-Fix Bot Team"
+  
+  # 驗證意圖 (Validation Intent)
+  validation:
+    purpose: "確保多雲委派配置的正確性和安全性"
+    required_checks:
+      - "provider credentials validation"
+      - "network security compliance"
+      - "resource quota verification"
+    
+  # 質量目標 (Quality Objectives)
+  quality:
+    completeness: "所有必要配置項已定義"
+    consistency: "跨提供商配置保持一致性"
+    security: "符合零信任架構要求"
 
 # 全局設置
 global:
@@ -55,21 +89,41 @@ cloud_providers:
       NODE_ENV: "production"
       LOG_LEVEL: "info"
 
-# 任務委派策略
+# 任務委派策略 (Task Delegation Strategy)
+# ============================================================
+# 驗證要點 (Validation Points):
+# - algorithm 必須為 ["round-robin", "least-connections", "weighted-round-robin"] 之一
+# - weights 總和應為 100 (容差 ±5%)
+# - health_check.interval > health_check.timeout
+# - thresholds 必須 > 0
+#
+# 預期行為 (Expected Behavior):
+# - 根據權重智能分配任務到各雲端提供商
+# - 健康檢查失敗時自動故障轉移到備用提供商
 delegation_strategy:
-  # 負載均衡策略
+  # 負載均衡策略 (Load Balancing Strategy)
   load_balancing:
     algorithm: "weighted-round-robin"  # round-robin, least-connections, weighted-round-robin
+    
+    # 權重分配 (Weight Distribution)
+    # 設計理念：基於任務類型和提供商特性的最優分配
+    # AWS 40%: 代碼分析、安全掃描 (低延遲、高可靠)
+    # GCP 35%: 自動修復、報告生成 (強大計算能力)
+    # Azure 25%: 性能優化 (成本效益平衡)
+    # 驗證規則：總和 = 100 ± 5%
     weights:
       aws: 40
       gcp: 35
       azure: 25
+      
+    # 健康檢查 (Health Check Configuration)
+    # 驗證規則：interval > timeout, thresholds > 0
     health_check:
       enabled: true
-      interval: 30  # 秒
-      timeout: 10
-      unhealthy_threshold: 3
-      healthy_threshold: 2
+      interval: 30  # 秒，檢查間隔 (must be > timeout)
+      timeout: 10   # 秒，單次檢查超時
+      unhealthy_threshold: 3  # 連續失敗次數判定不健康
+      healthy_threshold: 2    # 連續成功次數判定健康
       
   # 故障轉移
   failover:
