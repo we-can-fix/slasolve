@@ -39,7 +39,7 @@ class LogicValidator {
     };
 
     // Count results
-    for (const [checkName, result] of Object.entries(validation.checks)) {
+    for (const result of Object.values(validation.checks)) {
       validation.summary.totalChecks++;
       if (result.valid) {
         validation.summary.passed++;
