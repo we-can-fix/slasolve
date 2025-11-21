@@ -58,7 +58,7 @@
 - **Indentation:** 2 spaces
 - **Line length:** Maximum 100 characters
 - **Semicolons:** Required
-- **Quotes:** Single quotes `'` preferred, double quotes `"` in JSX
+- **Quotes:** Single quotes `'` preferred for general strings; double quotes `"` acceptable in JSX and specific contexts (e.g., error messages, when avoiding escape characters)
 - **Trailing commas:** Use (ES5 compatible)
 
 ```typescript
@@ -205,10 +205,16 @@ type Provenance = z.infer<typeof provenanceSchema>;
 
 ## 📝 Documentation and Comments
 
+### Documentation Language
+This project uses a **bilingual documentation approach**:
+- **JSDoc and code comments**: May use Traditional Chinese (繁體中文) for function summaries, especially in existing code
+- **English**: Used for detailed parameter descriptions, technical documentation, and new features
+- **Consistency**: When adding to existing files, match the language style already present
+
 ### JSDoc Comments
 ```typescript
 /**
- * Validates SLSA provenance for a given artifact
+ * 創建構建認證 (Create build attestation)
  * 
  * @param artifactId - Unique identifier of the artifact
  * @param provenance - Provenance data to validate

@@ -79,11 +79,12 @@ jobs:
       - name: Generate validation report
         if: always()
         run: |
-          SIZE=$(wc -c < .github/copilot-instructions.md)
-          SIZE_KB=$((SIZE / 1024))
-          LINES=$(wc -l < .github/copilot-instructions.md)
-          
-          cat > validation-report.md << EOF
+          if [ -f .github/copilot-instructions.md ]; then
+            SIZE=$(wc -c < .github/copilot-instructions.md)
+            SIZE_KB=$((SIZE / 1024))
+            LINES=$(wc -l < .github/copilot-instructions.md)
+            
+            cat > validation-report.md << EOF
           # 📋 Copilot Instructions Validation Report
           
           **Date:** $(date)
@@ -102,6 +103,16 @@ jobs:
           
           All validation checks passed! 🎉
           EOF
+          else
+            cat > validation-report.md << EOF
+          # 📋 Copilot Instructions Validation Report
+          
+          **Date:** $(date)
+          **Status:** ${{ job.status }}
+          
+          ❌ Validation failed: Instructions file not found
+          EOF
+          fi
           
           cat validation-report.md
       
