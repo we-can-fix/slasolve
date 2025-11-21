@@ -429,6 +429,15 @@
                     this.style.transform = 'scale(1)';
                 }, 200);
             });
+            item.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+                    e.preventDefault();
+                    this.style.transform = 'scale(1.1)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                    }, 200);
+                }
+            });
         });
 
         // 動態更新效率指標
