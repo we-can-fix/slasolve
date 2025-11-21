@@ -1,0 +1,474 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://company.com/schemas/auto-fix-bot/v1.0.0",
+  "title": "Auto-Fix Bot Configuration Schema",
+  "description": "Configuration schema for Auto-Fix Bot with complete validation rules",
+  "type": "object",
+  "required": [
+    "version",
+    "project",
+    "analysis",
+    "auto_fix",
+    "security",
+    "testing",
+    "integrations"
+  ],
+  "additionalProperties": false,
+  
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Configuration metadata for tracking and validation",
+      "required": ["schema_version", "created_at", "updated_at"],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+$",
+          "description": "Schema version number"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date",
+          "description": "Configuration creation date"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date",
+          "description": "Last update date"
+        },
+        "author": {
+          "type": "string",
+          "description": "Configuration author"
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "purpose": {
+              "type": "string",
+              "description": "Purpose of validation"
+            },
+            "required_checks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "quality": {
+          "type": "object",
+          "properties": {
+            "completeness": {
+              "type": "string"
+            },
+            "consistency": {
+              "type": "string"
+            },
+            "maintainability": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Configuration version in semantic versioning format"
+    },
+    
+    "project": {
+      "type": "object",
+      "required": ["name", "language", "framework"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Project name"
+        },
+        "language": {
+          "type": "string",
+          "enum": [
+            "javascript",
+            "typescript",
+            "python",
+            "java",
+            "csharp",
+            "go",
+            "rust",
+            "ruby",
+            "php",
+            "swift",
+            "kotlin"
+          ],
+          "description": "Primary programming language"
+        },
+        "framework": {
+          "type": "string",
+          "description": "Framework or runtime"
+        },
+        "version": {
+          "type": "string",
+          "description": "Language/framework version"
+        }
+      }
+    },
+    
+    "analysis": {
+      "type": "object",
+      "required": ["enabled", "rules"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable analysis"
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "enabled"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": [
+                  "complexity",
+                  "security",
+                  "performance",
+                  "style",
+                  "documentation",
+                  "dependencies"
+                ],
+                "description": "Rule name"
+              },
+              "enabled": {
+                "type": "boolean",
+                "description": "Enable this rule"
+              },
+              "threshold": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "description": "Rule threshold"
+              },
+              "severity": {
+                "type": "string",
+                "enum": ["error", "warning", "info"],
+                "description": "Issue severity"
+              }
+            }
+          }
+        },
+        "exclude_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Paths to exclude from analysis"
+        }
+      }
+    },
+    
+    "auto_fix": {
+      "type": "object",
+      "required": ["enabled", "types"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable auto-fix"
+        },
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "syntax",
+              "formatting",
+              "imports",
+              "security",
+              "performance",
+              "deprecation"
+            ]
+          },
+          "description": "Types of fixes to apply automatically"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["conservative", "balanced", "aggressive"],
+          "default": "balanced",
+          "description": "Fix application strategy"
+        },
+        "max_changes_per_file": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10,
+          "description": "Maximum number of changes per file"
+        },
+        "require_approval": {
+          "type": "boolean",
+          "default": false,
+          "description": "Require human approval before applying fixes"
+        }
+      }
+    },
+    
+    "security": {
+      "type": "object",
+      "required": ["enabled", "scanners"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable security scanning"
+        },
+        "scanners": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "enabled"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": [
+                  "dependency",
+                  "code",
+                  "secrets",
+                  "container",
+                  "license"
+                ],
+                "description": "Scanner type"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "severity_threshold": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"],
+                "default": "medium",
+                "description": "Minimum severity to report"
+              }
+            }
+          }
+        },
+        "fail_on_critical": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fail build on critical vulnerabilities"
+        }
+      }
+    },
+    
+    "testing": {
+      "type": "object",
+      "required": ["framework", "coverage"],
+      "properties": {
+        "framework": {
+          "type": "string",
+          "description": "Testing framework"
+        },
+        "coverage": {
+          "type": "object",
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Minimum coverage percentage"
+            }
+          }
+        },
+        "auto_generate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-generate tests for uncovered code"
+        }
+      }
+    },
+    
+    "integrations": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable integrations"
+        },
+        "github": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "pr_comments": {
+              "type": "boolean",
+              "description": "Post comments on pull requests"
+            },
+            "status_checks": {
+              "type": "boolean",
+              "description": "Create status checks"
+            }
+          }
+        },
+        "gitlab": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "merge_request_comments": {
+              "type": "boolean"
+            }
+          }
+        },
+        "bitbucket": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "jira": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "create_tickets": {
+              "type": "boolean",
+              "description": "Create JIRA tickets for issues"
+            },
+            "project_key": {
+              "type": "string",
+              "pattern": "^[A-Z]{2,10}$",
+              "description": "JIRA project key"
+            }
+          }
+        },
+        "slack": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "channel": {
+              "type": "string",
+              "pattern": "^#[a-z0-9-]+$",
+              "description": "Slack channel name"
+            },
+            "notifications": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["critical", "high", "all"]
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable notifications"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["email", "slack", "teams", "discord"]
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "analysis_complete",
+              "fixes_applied",
+              "security_issue",
+              "test_failure"
+            ]
+          }
+        }
+      }
+    },
+    
+    "delegation": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable cloud delegation"
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["aws", "gcp", "azure"],
+          "description": "Cloud provider for delegation"
+        },
+        "config_file": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9/_.-]+\\.ya?ml$",
+          "description": "Path to delegation configuration file"
+        }
+      }
+    },
+    
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warning", "error"],
+          "default": "info",
+          "description": "Logging level"
+        },
+        "output": {
+          "type": "string",
+          "enum": ["console", "file", "both"],
+          "default": "console",
+          "description": "Log output destination"
+        },
+        "file_path": {
+          "type": "string",
+          "description": "Log file path (required if output is 'file' or 'both')"
+        }
+      }
+    },
+    
+    "cache": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable result caching"
+        },
+        "ttl": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400,
+          "default": 3600,
+          "description": "Cache TTL in seconds"
+        },
+        "storage": {
+          "type": "string",
+          "enum": ["memory", "disk", "redis"],
+          "default": "memory",
+          "description": "Cache storage type"
+        }
+      }
+    }
+  }
+}
