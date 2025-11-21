@@ -251,12 +251,15 @@ def select_cloud_provider(task):
     # 檢查提供商健康狀態
     healthy_providers = get_healthy_providers()
     
+    # 檢查是否啟用負載均衡（避免在循環中重複調用）
+    load_balancing_enabled = use_load_balancing()
+    
     # 計算每個提供商的得分（已包含負載均衡權重）
     scores = {}
     for provider in healthy_providers:
         base_score = calculate_score(provider, factors)
         # 如果啟用負載均衡，在計算分數時就應用權重
-        if use_load_balancing():
+        if load_balancing_enabled:
             weight = get_provider_weight(provider)
             scores[provider] = base_score * weight
         else:
