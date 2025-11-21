@@ -68,11 +68,13 @@ jobs:
       
       - name: Validate UTF-8 encoding
         run: |
-          if ! file .github/copilot-instructions.md | grep -q "UTF-8"; then
-            echo "❌ File must be UTF-8 encoded"
+          ENCODING=$(file -i .github/copilot-instructions.md)
+          if ! echo "$ENCODING" | grep -q -E "charset=(utf-8|us-ascii)"; then
+            echo "❌ File must be UTF-8 or US-ASCII encoded"
+            echo "Detected encoding: $ENCODING"
             exit 1
           fi
-          echo "✅ File is UTF-8 encoded"
+          echo "✅ File encoding is valid ($ENCODING)"
       
       - name: Generate validation report
         if: always()
