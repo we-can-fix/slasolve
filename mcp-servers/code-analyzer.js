@@ -616,7 +616,13 @@ async function main() {
           `Invalid parameters: ${error.errors.map(e => e.message).join(', ')}`
         );
       }
-      throw error;
+      if (error instanceof McpError) {
+        throw error;
+      }
+      throw new McpError(
+        ErrorCode.InternalError,
+        error instanceof Error ? error.message : String(error)
+      );
     }
   });
 
