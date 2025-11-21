@@ -49,7 +49,7 @@ class SecurityScanner {
   }
 
   /**
-   * 掃描程式碼漏洞
+   * Scan code vulnerabilities
    */
   scanVulnerabilities(code, language = 'javascript', severity = 'all') {
     const scan = {
@@ -105,7 +105,7 @@ class SecurityScanner {
   }
 
   /**
-   * 檢查依賴項安全性
+   * Check dependency security
    */
   checkDependencies(dependencies, ecosystem = 'npm') {
     const check = {
@@ -154,7 +154,7 @@ class SecurityScanner {
   }
 
   /**
-   * 分析程式碼中的秘密
+   * Analyze secrets in code
    */
   analyzeSecrets(content, strictMode = true) {
     const analysis = {
@@ -169,7 +169,7 @@ class SecurityScanner {
       }
     };
 
-    // Scan for各種類型的秘密
+    // Scan for various types of secrets
     for (const [type, pattern] of Object.entries(this.secretPatterns)) {
       const matches = content.matchAll(pattern.regex);
       

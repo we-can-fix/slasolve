@@ -49,7 +49,7 @@ const GenerateE2ETestsSchema = z.object({
  */
 class TestGenerator {
   /**
-   * 生成單元測試
+   * Generate unit tests
    */
   generateUnitTests(code, framework = 'jest', coverage = 'comprehensive') {
     const functions = this._extractFunctions(code);
@@ -81,7 +81,7 @@ class TestGenerator {
   }
 
   /**
-   * 生成集成測試
+   * Generate integration tests
    */
   generateIntegrationTests(endpoints, framework = 'jest') {
     const tests = {
@@ -105,7 +105,7 @@ class TestGenerator {
   }
 
   /**
-   * 生成端到端測試
+   * Generate end-to-end tests
    */
   generateE2ETests(scenarios, framework = 'playwright') {
     const tests = {

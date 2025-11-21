@@ -59,7 +59,7 @@ class SLSAValidator {
   }
 
   /**
-   * 驗證 SLSA provenance 數據
+   * Validate SLSA provenance data
    */
   validateProvenance(provenance, level = '3') {
     const validation = {
@@ -96,7 +96,7 @@ class SLSAValidator {
   }
 
   /**
-   * 檢查 SLSA 合規性
+   * Check SLSA compliance
    */
   checkSLSACompliance(provenance, targetLevel = '3') {
     const compliance = {
@@ -146,7 +146,7 @@ class SLSAValidator {
   }
 
   /**
-   * 生成合規性報告
+   * Generate compliance report
    */
   generateComplianceReport(provenance, includeRemediation = true) {
     const report = {

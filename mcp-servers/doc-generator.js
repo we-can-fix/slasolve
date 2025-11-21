@@ -47,7 +47,7 @@ const GenerateGuidesSchema = z.object({
  */
 class DocGenerator {
   /**
-   * 生成 JSDoc 文檔
+   * Generate JSDoc documentation
    */
   generateJSDoc(code, style = 'standard') {
     const functions = this._extractFunctions(code);
@@ -69,7 +69,7 @@ class DocGenerator {
   }
 
   /**
-   * 生成 API 文檔
+   * Generate API documentation
    */
   generateAPIDocs(endpoints, format = 'markdown') {
     const docs = {
@@ -90,7 +90,7 @@ class DocGenerator {
   }
 
   /**
-   * 生成開發指南
+   * Generate development guides
    */
   generateGuides(topic, sections = [], audience = 'developer') {
     const guide = {

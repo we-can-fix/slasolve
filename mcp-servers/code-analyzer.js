@@ -46,7 +46,7 @@ const SuggestImprovementsSchema = z.object({
  */
 class CodeAnalyzer {
   /**
-   * 分析代碼質量和複雜度
+   * Analyze code quality and complexity
    */
   analyzeCode(code, language = 'javascript', options = {}) {
     const lines = code.split('\n');
@@ -88,7 +88,7 @@ class CodeAnalyzer {
   }
 
   /**
-   * 檢測代碼問題
+   * Detect code issues
    */
   detectIssues(code, severityFilter = 'medium') {
     const issues = [];
@@ -116,7 +116,7 @@ class CodeAnalyzer {
   }
 
   /**
-   * 提供代碼改進建議
+   * Provide code improvement suggestions
    */
   suggestImprovements(code, context = '') {
     const issues = this.detectIssues(code, 'info');

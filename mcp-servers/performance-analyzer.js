@@ -45,7 +45,7 @@ const SuggestOptimizationsSchema = z.object({
  */
 class PerformanceAnalyzer {
   /**
-   * 分析程式碼性能
+   * Analyze code performance
    */
   analyzePerformance(code, language = 'javascript', metrics = ['all']) {
     const analysis = {
@@ -82,7 +82,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * 識別性能瓶頸
+   * Identify performance bottlenecks
    */
   identifyBottlenecks(code, threshold = {}) {
     const bottlenecks = {
@@ -131,7 +131,7 @@ class PerformanceAnalyzer {
   }
 
   /**
-   * 提供優化建議
+   * Provide optimization suggestions
    */
   suggestOptimizations(code, focus = ['all']) {
     const suggestions = {
