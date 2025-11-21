@@ -10,7 +10,6 @@
  */
 
 import { createHash } from 'crypto';
-import { fileURLToPath } from 'url';
 
 /**
  * Logic validation engine
@@ -498,7 +497,7 @@ async function main() {
 }
 
 // Run if executed directly
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
