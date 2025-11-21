@@ -47,6 +47,7 @@ router.post('/api/v1/provenance/attestations', provenanceController.createAttest
 router.post('/api/v1/provenance/verify', provenanceController.verifyAttestation);
 router.post('/api/v1/provenance/import', provenanceController.importAttestation);
 router.get('/api/v1/provenance/digest/:filePath(*)', provenanceController.getFileDigest);
+router.get('/api/v1/provenance/export/:id', provenanceController.exportAttestation);
 
 // SLSA 認證端點
 router.post('/api/v1/slsa/attestations', slsaController.createAttestation);
@@ -70,7 +71,8 @@ router.get('/', (_req: Request, res: Response) => {
         createAttestation: 'POST /api/v1/provenance/attestations',
         verifyAttestation: 'POST /api/v1/provenance/verify',
         importAttestation: 'POST /api/v1/provenance/import',
-        getFileDigest: 'GET /api/v1/provenance/digest/{filePath}'
+        getFileDigest: 'GET /api/v1/provenance/digest/{filePath}',
+        exportAttestation: 'GET /api/v1/provenance/export/{id}'
       },
       slsa: {
         createAttestation: 'POST /api/v1/slsa/attestations',
