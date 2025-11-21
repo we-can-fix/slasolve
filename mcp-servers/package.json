@@ -1,0 +1,28 @@
+{
+  "name": "@slasolve/mcp-servers",
+  "version": "1.0.0",
+  "description": "Enterprise-grade MCP servers for AutoExecutionEngine Agent",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint *.js --max-warnings 0",
+    "test": "node --test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "slsa",
+    "provenance",
+    "code-analysis"
+  ],
+  "author": "SLASolve Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "zod": "^3.22.4"
+  }
+}
