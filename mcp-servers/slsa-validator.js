@@ -582,7 +582,13 @@ async function main() {
           `Invalid parameters: ${error.errors.map(e => e.message).join(', ')}`
         );
       }
-      throw error;
+      // Wrap all other errors in McpError with InternalError code
+      throw new McpError(
+        ErrorCode.InternalError,
+        error instanceof Error
+          ? `Internal error: ${error.message}`
+          : `Internal error: ${String(error)}`
+      );
     }
   });
 
