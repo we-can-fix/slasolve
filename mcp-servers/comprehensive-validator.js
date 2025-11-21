@@ -11,6 +11,7 @@
 
 import { readdir, readFile } from 'fs/promises';
 import { resolve, extname } from 'path';
+import { fileURLToPath } from 'url';
 import { DeploymentValidator } from './deployment-validator.js';
 import { LogicValidator } from './logic-validator.js';
 
@@ -350,7 +351,7 @@ async function main() {
 }
 
 // Run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
   main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
