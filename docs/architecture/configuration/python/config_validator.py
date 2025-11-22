@@ -263,12 +263,8 @@ class ConfigValidator:
         search_dirs = directories or [self.project_path]
         
         for search_dir in search_dirs:
-            # If directories is None, use self.project_path directly (already absolute or as intended)
-            if directories is None:
-                full_search_dir = search_dir
-            else:
-                full_search_dir = os.path.join(self.project_path, search_dir) \
-                    if not os.path.isabs(search_dir) else search_dir
+            # Always resolve search_dir to an absolute path
+            full_search_dir = search_dir if os.path.isabs(search_dir) else os.path.join(self.project_path, search_dir)
             
             if not os.path.exists(full_search_dir):
                 continue
