@@ -567,7 +567,7 @@ async function main() {
   }));
 
   // Handle tool calls
-  server.setRequestHandler(CallToolRequestSchema, ( request) => {
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {

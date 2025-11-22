@@ -548,10 +548,10 @@ async function main() {
               type: 'string',
               description: 'The source code to generate tests for'
             },
-            _framework: {
+            framework: {
               type: 'string',
               enum: ['jest', 'mocha', 'vitest'],
-              description: 'Testing _framework',
+              description: 'Testing framework',
               default: 'jest'
             },
             coverage: {
@@ -583,10 +583,10 @@ async function main() {
               },
               description: 'API endpoints to test'
             },
-            _framework: {
+            framework: {
               type: 'string',
               enum: ['jest', 'supertest', 'chai'],
-              description: 'Testing _framework',
+              description: 'Testing framework',
               default: 'jest'
             }
           },
@@ -618,10 +618,10 @@ async function main() {
               },
               description: 'Test scenarios to implement'
             },
-            _framework: {
+            framework: {
               type: 'string',
               enum: ['playwright', 'cypress', 'puppeteer'],
-              description: 'E2E testing _framework',
+              description: 'E2E testing framework',
               default: 'playwright'
             }
           },
