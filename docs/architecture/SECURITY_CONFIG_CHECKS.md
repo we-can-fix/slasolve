@@ -429,7 +429,9 @@ if __name__ == "__main__":
 
 ### YAML/JSON配置驗證器
 
-```python
+```bash
+# Example: Check formatting and list files that differ
+npx prettier --check . --list-different > "$REPORTS_DIR/prettier-files.txt"
 # config_validator.py
 import yaml
 import json
