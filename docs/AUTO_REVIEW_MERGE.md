@@ -233,8 +233,8 @@ permissions:
 
 ## 📚 相關資源 (Related Resources)
 
-- [GitHub Actions 文檔](https://docs.github.com/actions)
-- [Pull Request 最佳實踐](https://docs.github.com/pull-requests)
+- [GitHub Actions 文檔](https://docs.github.com/en/actions)
+- [Pull Request 最佳實踐](https://docs.github.com/en/pull-requests)
 - [代碼審核指南](https://google.github.io/eng-practices/review/)
 
 ## 🤝 貢獻 (Contributing)

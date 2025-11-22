@@ -25,6 +25,7 @@ env:
   AUTO_MERGE_METHOD: squash
   # Check wait time in milliseconds
   # Should match review.check_wait_time in .github/auto-review-config.yml
+  # Default: 5000ms (5 seconds) - allows GitHub to update PR state after review
   CHECK_WAIT_TIME_MS: 5000
 
 jobs:
