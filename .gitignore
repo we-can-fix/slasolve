@@ -12,7 +12,10 @@ build/
 .env.local
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/mcp.json
 .idea/
 *.swp
 *.swo
