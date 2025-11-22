@@ -65,7 +65,11 @@ class SecurityScanner:
             result = subprocess.run(cmd, capture_output=True, text=True, cwd=self.project_path)
             
             # 解析輸出
-            report = json.loads(result.stdout) if result.stdout else []
+            try:
+                report = json.loads(result.stdout) if result.stdout else []
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse Safety output: {e}")
+                return {'tool': 'safety', 'error': f'Invalid JSON output: {str(e)}'}
             
             # 保存報告
             with open(os.path.join(self.reports_dir, 'safety-report.json'), 'w') as f:
