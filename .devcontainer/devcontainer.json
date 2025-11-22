@@ -3,9 +3,6 @@
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-18-bullseye",
   
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "18"
-    },
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest"
     },
