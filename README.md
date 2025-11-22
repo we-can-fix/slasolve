@@ -49,6 +49,5 @@ No additional setup required! 🎉
 ## 📚 Documentation
 
 - [Auto Review & Merge Guide](docs/AUTO_REVIEW_MERGE.md)
-- [Auto-Fix Bot Guide](AUTO_FIX_BOT_GUIDE.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)

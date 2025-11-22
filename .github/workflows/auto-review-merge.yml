@@ -41,7 +41,8 @@ jobs:
           
           # Get changed files
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}..HEAD)
+            BASE_REF="${{ github.base_ref || 'main' }}"
+            CHANGED_FILES=$(git diff --name-only origin/$BASE_REF..HEAD)
           else
             CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD)
           fi
@@ -174,7 +175,9 @@ jobs:
             console.log('⏳ 等待所有檢查完成...');
             
             // Wait for a short time to allow checks to complete
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            // 5 seconds should be enough for GitHub to update the PR state after review approval
+            const WAIT_TIME_MS = 5000;
+            await new Promise(resolve => setTimeout(resolve, WAIT_TIME_MS));
             
             // Get PR status
             const { data: pr } = await github.rest.pulls.get({

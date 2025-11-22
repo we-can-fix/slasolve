@@ -1,6 +1,9 @@
 #!/bin/bash
 # Auto-fix script for removing unused imports
 # 自動修復未使用的 import
+#
+# Configuration is defined in .github/auto-review-config.yml
+# File patterns and exclusions can be customized there
 
 set -e
 
@@ -31,6 +34,8 @@ fix_unused_imports() {
 }
 
 # Find and fix TypeScript/JavaScript files
+# Note: File patterns and exclusions are configured in .github/auto-review-config.yml
+# These patterns should match the configuration file
 echo ""
 echo "🔍 搜索 TypeScript/JavaScript 文件..."
 while IFS= read -r file; do
