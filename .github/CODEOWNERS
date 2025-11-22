@@ -1,0 +1,55 @@
+# CODEOWNERS - 代碼所有權配置
+# 此檔案定義了倉庫中不同部分的代碼審查者
+# 當 PR 修改這些文件時，會自動要求相應的審查者進行審查
+
+# 預設所有者 - 所有未明確指定的文件
+* @security-team
+
+# 安全相關配置 - 需要安全團隊審查
+/.github/workflows/codeql-advanced.yml @security-team
+/.github/workflows/pr-security-gate.yml @security-team
+/.github/workflows/secret-*.yml @security-team
+/.github/workflows/auto-vulnerability-fix.yml @security-team
+/.github/security-policy.yml @security-team
+/.github/secret-scanning/ @security-team
+/.github/codeql/ @security-team
+/config/security-network-config.yml @security-team
+/config/prometheus-rules.yml @security-team @devops-team
+/SECURITY.md @security-team
+
+# 腳本和自動化 - 需要 DevOps 團隊審查
+/scripts/ @devops-team @security-team
+/config/elasticsearch-config.sh @devops-team
+/config/prometheus-config.yml @devops-team
+
+# GitHub Actions 工作流程 - DevOps 團隊負責
+/.github/workflows/setup-runner.yml @devops-team
+/.github/workflows/validate-*.yml @devops-team
+
+# 文檔 - 技術寫作團隊和相關領域專家
+/docs/ @tech-writers
+/docs/GHAS_*.md @security-team @tech-writers
+/docs/CODEQL_SETUP.md @security-team @tech-writers
+/docs/SECRET_SCANNING.md @security-team @tech-writers
+/docs/VULNERABILITY_MANAGEMENT.md @security-team @tech-writers
+/README.md @tech-writers
+
+# Dependabot 配置 - 安全團隊和 DevOps 團隊共同負責
+/.github/dependabot.yml @security-team @devops-team
+
+# 核心應用程式代碼
+/core/ @development-team
+/core/contracts/ @development-team @security-team
+/mcp-servers/ @development-team
+
+# 高級系統源碼 - 需要資深開發者審查
+/advanced-system-src/ @senior-developers @security-team
+
+# 測試和架構 - QA 團隊和開發團隊
+/test-vectors/ @qa-team @development-team
+/schemas/ @development-team
+
+# 重要配置文件 - 需要多個團隊審查
+/package.json @development-team @devops-team
+/tsconfig.json @development-team
+/.gitignore @devops-team
