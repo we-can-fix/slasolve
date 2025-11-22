@@ -462,7 +462,7 @@ class LogicValidator {
 /**
  * Main execution
  */
-function main() {
+async function main() {
   const validator = new LogicValidator();
   
   // Example usage
