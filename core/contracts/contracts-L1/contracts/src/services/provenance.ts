@@ -173,7 +173,7 @@ export class ProvenanceService {
 
       // 如果有文件路徑，驗證摘要
       if (attestation.subject.path) {
-        const currentDigest = await this.generateFileDigest(attestation.subject.path);ㄜ
+        const currentDigest = await this.generateFileDigest(attestation.subject.path);
         return currentDigest === attestation.subject.digest;
       }
 
