@@ -1,0 +1,90 @@
+name: "CodeQL Advanced Security Scan"
+
+on:
+  push:
+    branches: ["main", "develop", "release/*"]
+  pull_request:
+    branches: ["main", "develop"]
+  schedule:
+    - cron: '0 2 * * 1'  # 每週一凌晨 2 點執行
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'python', 'java', 'csharp', 'cpp', 'go']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        config-file: ./.github/codeql/codeql-config.yml
+        setup-python-dependencies: false
+
+    - name: Custom Build Configuration
+      run: |
+        case "${{ matrix.language }}" in
+          java)
+            if [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+              ./gradlew build -x test --no-daemon
+            elif [ -f "pom.xml" ]; then
+              mvn clean compile -DskipTests
+            fi
+            ;;
+          csharp)
+            dotnet restore
+            dotnet build --configuration Release --no-restore
+            ;;
+          cpp)
+            if [ -f "CMakeLists.txt" ]; then
+              mkdir -p build && cd build
+              cmake .. -DCMAKE_BUILD_TYPE=Release
+              make -j$(nproc)
+            elif [ -f "Makefile" ]; then
+              make clean && make release
+            fi
+            ;;
+          javascript)
+            if [ -f "package-lock.json" ]; then
+              npm ci --production=false
+            elif [ -f "yarn.lock" ]; then
+              yarn install --frozen-lockfile
+            fi
+            if [ -f "webpack.config.js" ] || [ -f "vite.config.js" ]; then
+              npm run build
+            fi
+            ;;
+          python)
+            python -m pip install --upgrade pip
+            if [ -f "requirements.txt" ]; then
+              pip install -r requirements.txt
+            fi
+            if [ -f "setup.py" ]; then
+              pip install -e .
+            fi
+            ;;
+          go)
+            go mod download
+            go mod verify
+            go build ./...
+            ;;
+        esac
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+        upload: true
