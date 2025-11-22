@@ -257,7 +257,7 @@ permissions:
 
 ## 📄 授權 (License)
 
-MIT License - 詳見 [LICENSE](../LICENSE) 文件
+本項目為開源項目。
 
 ---
 

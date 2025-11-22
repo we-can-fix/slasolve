@@ -21,8 +21,11 @@ permissions:
 
 env:
   # Merge method: squash, merge, or rebase
-  # Can be configured to match .github/auto-review-config.yml settings
+  # Should match merge.method in .github/auto-review-config.yml
   AUTO_MERGE_METHOD: squash
+  # Check wait time in milliseconds
+  # Should match review.check_wait_time in .github/auto-review-config.yml
+  CHECK_WAIT_TIME_MS: 5000
 
 jobs:
   auto-review:
@@ -179,9 +182,10 @@ jobs:
             
             console.log('⏳ 等待所有檢查完成...');
             
-            // Wait for a short time to allow checks to complete
-            // 5 seconds should be enough for GitHub to update the PR state after review approval
-            const WAIT_TIME_MS = 5000;
+            // Wait for checks to complete
+            // This value should match check_wait_time in .github/auto-review-config.yml (default: 5000ms)
+            // Allows GitHub to update the PR state after review approval
+            const WAIT_TIME_MS = parseInt(process.env.CHECK_WAIT_TIME_MS) || 5000;
             await new Promise(resolve => setTimeout(resolve, WAIT_TIME_MS));
             
             // Get PR status
@@ -237,7 +241,7 @@ jobs:
                 issue_number: pull_number,
                 body: `## 🎉 自動合併成功 (Auto-Merge Successful)\n\n` +
                       `✅ PR 已成功自動合併至 \`main\` 分支\n` +
-                      `🔀 合併方式: Squash merge\n` +
+                      `🔀 合併方式: ${MERGE_METHOD}\n` +
                       `📝 Merge commit: ${result.data.sha}\n\n` +
                       `感謝您的貢獻！🚀`
               });
