@@ -194,8 +194,12 @@ class CodeAnalyzer {
     let nestingLevel = 0;
 
     for (const line of lines) {
-      if (line.includes('{')) nestingLevel++;
-      if (line.includes('}')) nestingLevel = Math.max(0, nestingLevel - 1);
+      if (line.includes('{')) {
+nestingLevel++;
+}
+      if (line.includes('}')) {
+nestingLevel = Math.max(0, nestingLevel - 1);
+}
       
       if (/\b(if|for|while|switch)\b/.test(line)) {
         complexity += 1 + nestingLevel;
@@ -206,10 +210,18 @@ class CodeAnalyzer {
   }
 
   _getComplexityRating(complexity) {
-    if (complexity <= 5) return 'A - Simple';
-    if (complexity <= 10) return 'B - Moderate';
-    if (complexity <= 20) return 'C - Complex';
-    if (complexity <= 50) return 'D - Very Complex';
+    if (complexity <= 5) {
+return 'A - Simple';
+}
+    if (complexity <= 10) {
+return 'B - Moderate';
+}
+    if (complexity <= 20) {
+return 'C - Complex';
+}
+    if (complexity <= 50) {
+return 'D - Very Complex';
+}
     return 'F - Extremely Complex';
   }
 
@@ -325,7 +337,9 @@ class CodeAnalyzer {
         inFunction = true;
         functionLines = 0;
       }
-      if (inFunction) functionLines++;
+      if (inFunction) {
+functionLines++;
+}
       if (line.includes('}') && inFunction) {
         if (functionLines > 50) {
           issues.push({
@@ -368,9 +382,13 @@ class CodeAnalyzer {
     let score = 100;
 
     // Deduct points based on complexity
-    if (analysis.complexity.cyclomatic > 20) score -= 20;
-    else if (analysis.complexity.cyclomatic > 10) score -= 10;
-    else if (analysis.complexity.cyclomatic > 5) score -= 5;
+    if (analysis.complexity.cyclomatic > 20) {
+score -= 20;
+} else if (analysis.complexity.cyclomatic > 10) {
+score -= 10;
+} else if (analysis.complexity.cyclomatic > 5) {
+score -= 5;
+}
 
     // Deduct points based on issues
     for (const issue of analysis.issues) {
@@ -397,7 +415,7 @@ class CodeAnalyzer {
     return priorities[severity] || 0;
   }
 
-  _generateSuggestion(issue, code) {
+  _generateSuggestion(issue, _code) {
     const suggestions = {
       'security': {
         'eval': 'Replace eval() with safer alternatives like Function constructor or JSON.parse()',
@@ -477,7 +495,7 @@ async function main() {
   );
 
   // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: [
       {
         name: 'analyze-code',
@@ -549,7 +567,7 @@ async function main() {
   }));
 
   // Handle tool calls
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {

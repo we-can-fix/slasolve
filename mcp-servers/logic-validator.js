@@ -20,7 +20,7 @@ class LogicValidator {
   /**
    * Validate code logic and authenticity
    */
-  validate(code, options = {}) {
+  validate(code, _options = {}) {
     const validation = {
       timestamp: new Date().toISOString(),
       valid: true,
@@ -462,7 +462,7 @@ class LogicValidator {
 /**
  * Main execution
  */
-async function main() {
+function main() {
   const validator = new LogicValidator();
   
   // Example usage

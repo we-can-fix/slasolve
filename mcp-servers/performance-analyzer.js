@@ -254,7 +254,9 @@ class PerformanceAnalyzer {
       if (/\bfor\s*\(|\bwhile\s*\(/.test(line)) {
         depth++;
         maxDepth = Math.max(maxDepth, depth);
-        if (depth > 1) analysis.nestedLoops++;
+        if (depth > 1) {
+analysis.nestedLoops++;
+}
       }
       if (line.includes('}') && depth > 0) {
         depth--;
@@ -328,8 +330,12 @@ class PerformanceAnalyzer {
     let nesting = 0;
 
     for (const line of lines) {
-      if (line.includes('{')) nesting++;
-      if (line.includes('}')) nesting = Math.max(0, nesting - 1);
+      if (line.includes('{')) {
+nesting++;
+}
+      if (line.includes('}')) {
+nesting = Math.max(0, nesting - 1);
+}
       
       if (/\b(if|for|while|switch|catch)\b/.test(line)) {
         complexity += 1 + nesting;
@@ -362,8 +368,11 @@ class PerformanceAnalyzer {
     let score = 100;
 
     if (metrics.complexity) {
-      if (metrics.complexity.cyclomatic > 20) score -= 20;
-      else if (metrics.complexity.cyclomatic > 10) score -= 10;
+      if (metrics.complexity.cyclomatic > 20) {
+score -= 20;
+} else if (metrics.complexity.cyclomatic > 10) {
+score -= 10;
+}
     }
 
     if (metrics.memory) {
@@ -383,10 +392,18 @@ class PerformanceAnalyzer {
   }
 
   _calculateGrade(score) {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
+    if (score >= 90) {
+return 'A';
+}
+    if (score >= 80) {
+return 'B';
+}
+    if (score >= 70) {
+return 'C';
+}
+    if (score >= 60) {
+return 'D';
+}
     return 'F';
   }
 
@@ -432,7 +449,9 @@ class PerformanceAnalyzer {
 
     for (let i = 0; i < lines.length; i++) {
       if (/\bfor\s*\(|\bwhile\s*\(/.test(lines[i])) {
-        if (depth === 0) startLine = i + 1;
+        if (depth === 0) {
+startLine = i + 1;
+}
         depth++;
         maxDepth = Math.max(maxDepth, depth);
       }
@@ -640,7 +659,7 @@ async function main() {
     }
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: [
       {
         name: 'analyze-performance',
@@ -703,7 +722,7 @@ async function main() {
     ]
   }));
 
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
