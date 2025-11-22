@@ -81,6 +81,14 @@ merge:
     - master
 ```
 
+**注意：** 合併方式需要在工作流程文件 `.github/workflows/auto-review-merge.yml` 的 `env.AUTO_MERGE_METHOD` 中設置。默認為 `squash`。
+
+要更改合併方式，請編輯工作流程文件：
+```yaml
+env:
+  AUTO_MERGE_METHOD: squash  # 或 merge, rebase
+```
+
 ### 權限要求 (Required Permissions)
 
 工作流程需要以下權限：

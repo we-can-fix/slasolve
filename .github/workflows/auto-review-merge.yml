@@ -19,6 +19,11 @@ permissions:
   checks: read
   statuses: read
 
+env:
+  # Merge method: squash, merge, or rebase
+  # Can be configured to match .github/auto-review-config.yml settings
+  AUTO_MERGE_METHOD: squash
+
 jobs:
   auto-review:
     name: 🔍 自動審核 (Auto Review)
@@ -204,16 +209,21 @@ jobs:
               console.log('🔀 開始自動合併至 main 分支...');
               console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
               
+              // Merge method can be configured in .github/auto-review-config.yml
+              // Default is 'squash' to keep history clean
+              const MERGE_METHOD = process.env.AUTO_MERGE_METHOD || 'squash';
+              
               // Merge the PR
               const result = await github.rest.pulls.merge({
                 owner,
                 repo,
                 pull_number,
-                merge_method: 'squash', // 使用 squash 合併保持歷史記錄整潔
+                merge_method: MERGE_METHOD,
                 commit_title: `🤖 Auto-merge: ${context.payload.pull_request.title}`,
                 commit_message: `Automatically merged PR #${pull_number} after successful auto-review\n\n` +
                                `Branch: ${context.payload.pull_request.head.ref}\n` +
-                               `Author: @${context.payload.pull_request.user.login}`
+                               `Author: @${context.payload.pull_request.user.login}\n` +
+                               `Merge method: ${MERGE_METHOD}`
               });
               
               console.log('✅ PR 已成功合併至 main 分支!');
