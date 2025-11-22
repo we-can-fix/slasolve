@@ -9,6 +9,7 @@ metadata:
   name: postgres-secret
   namespace: code-quality
 type: Opaque
+# WARNING: Example credentials only - replace with secure secret management in production
 stringData:
   username: sonarqube
   password: sonarqube_password
