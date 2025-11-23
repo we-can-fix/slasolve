@@ -1,6 +1,6 @@
 
 import { ArrowRight, ShieldCheck, Cpu, Users, Zap } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
