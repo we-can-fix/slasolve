@@ -63,30 +63,34 @@ jobs:
 
       - name: 安裝依賴
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          if [ -f package.json ]; then
+            if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          else
+            echo "略過 npm install (無 package.json)"
+          fi
 
       - name: Lint 驗證
         run: |
-          if npm run | grep -q "lint"; then
+          if [ -f package.json ] && npm run | grep -q "lint"; then
             npm run lint
           else
-            echo "略過 lint (無對應 script)"
+            echo "略過 lint (無對應 script 或 package.json)"
           fi
 
       - name: 單元測試
         run: |
-          if npm run | grep -q "test"; then
+          if [ -f package.json ] && npm run | grep -q "test"; then
             npm test -- --ci --reporters=default
           else
-            echo "略過 tests (無對應 script)"
+            echo "略過 tests (無對應 script 或 package.json)"
           fi
 
       - name: 建置 (可選)
         run: |
-          if npm run | grep -q "build"; then
+          if [ -f package.json ] && npm run | grep -q "build"; then
             npm run build
           else
-            echo "略過 build (無對應 script)"
+            echo "略過 build (無對應 script 或 package.json)"
           fi
 
       - name: 自動核准 PR (若為組織成員)
