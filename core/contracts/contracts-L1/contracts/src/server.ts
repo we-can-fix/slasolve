@@ -17,29 +17,29 @@ app.use('/', routes);
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 
-const server = app.listen(config.PORT, () => {
-  console.log(`${config.SERVICE_NAME} running on port ${config.PORT}`);
-  console.log(`Environment: ${config.NODE_ENV}`);
-  console.log(`Log level: ${config.LOG_LEVEL}`);
-  console.log('Build Provenance Service enabled');
-});
-
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down...');
-  const shutdownTimeout = setTimeout(() => {
-    console.error('Shutdown timed out, forcing exit.');
-    process.exit(1);
-  }, 10000); // 10 seconds
-  server.close((err?: Error) => {
-    clearTimeout(shutdownTimeout);
-    if (err) {
-      console.error('Error during server shutdown:', err);
-      process.exit(1);
-    } else {
-      process.exit(0);
-    }
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  const server = app.listen(config.PORT, () => {
+    console.log(`${config.SERVICE_NAME} running on port ${config.PORT}`);
+    console.log(`Environment: ${config.NODE_ENV}`);
+    console.log(`Log level: ${config.LOG_LEVEL}`);
+    console.log('Build Provenance Service enabled');
   });
-});
 
-export default app;
-export { app };
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down...');
+    const shutdownTimeout = setTimeout(() => {
+      console.error('Shutdown timed out, forcing exit.');
+      process.exit(1);
+    }, 10000); // 10 seconds
+    server.close((err?: Error) => {
+      clearTimeout(shutdownTimeout);
+      if (err) {
+        console.error('Error during server shutdown:', err);
+        process.exit(1);
+      } else {
+        process.exit(0);
+      }
+    });
+  });
+}

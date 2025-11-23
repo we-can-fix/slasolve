@@ -44,10 +44,12 @@ router.get('/status', (_req: Request, res: Response) => {
 
 // 溯源認證端點
 router.post('/api/v1/provenance/attestations', provenanceController.createAttestation);
+router.post('/api/v1/provenance/attest', provenanceController.createAttestation); // Alias for tests
 router.post('/api/v1/provenance/verify', provenanceController.verifyAttestation);
 router.post('/api/v1/provenance/import', provenanceController.importAttestation);
+router.post('/api/v1/provenance/digest', provenanceController.getFileDigest); // POST for tests
 router.get('/api/v1/provenance/digest/:filePath(*)', provenanceController.getFileDigest);
-router.get('/api/v1/provenance/export/:id', provenanceController.exportAttestation);
+
 
 // SLSA 認證端點
 router.post('/api/v1/slsa/attestations', slsaController.createAttestation);
