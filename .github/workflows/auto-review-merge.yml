@@ -51,6 +51,36 @@ jobs:
               core.setOutput('member', 'false');
             }
 
+      - name: 驗證作者是否為協作者 (write 權限) 或組織成員
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+            const author = pr.user.login;
+            const isMember = steps.membercheck.outputs.member === 'true';
+            let isCollaborator = false;
+            let permission = '';
+            try {
+              const permResp = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: author
+              });
+              permission = permResp.data.permission;
+              core.info(`Author ${author} collaborator permission: ${permission}`);
+              if (['admin', 'write', 'maintain'].includes(permission)) {
+                isCollaborator = true;
+              }
+            } catch (e) {
+              core.warning(`查詢協作者權限失敗: ${e.message}`);
+            }
+            if (!isMember && !isCollaborator) {
+              core.setFailed(`PR 作者 ${author} 不是組織成員或具有 write 權限的協作者，流程終止。`);
+            } else {
+              core.info(`作者 ${author} 通過成員/協作者驗證。`);
+            }
       - name: 取用程式碼以執行基本檢查
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
