@@ -5,7 +5,6 @@ Jira Integration for GitHub Security Alerts
 """
 
 import requests
-import json
 import os
 import sys
 from typing import Optional
