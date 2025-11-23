@@ -34,7 +34,7 @@
 
   "forwardPorts": [3000, 3001],
   
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "cd core/contracts/contracts-L1/contracts && npm install",
   
   "remoteUser": "node"
 }
