@@ -9,10 +9,10 @@ metadata:
   name: postgres-secret
   namespace: code-quality
 type: Opaque
-# WARNING: Example credentials only - replace with secure secret management in production
+# WARNING: Example only. Do NOT commit real credentials. Use a placeholder below and manage secrets securely in production (e.g., Sealed Secrets, External Secrets Operator).
 stringData:
   username: sonarqube
-  password: sonarqube_password
+  password: <REPLACE_WITH_ACTUAL_PASSWORD>
 ---
 apiVersion: apps/v1
 kind: Deployment
