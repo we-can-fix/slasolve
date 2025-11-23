@@ -16,6 +16,9 @@ class JiraIntegration:
     
     def __init__(self, jira_url: str, username: str, api_token: str, project_key: str):
         self.jira_url = jira_url.rstrip('/')
+        # WARNING: Jira credentials are stored in memory in plaintext.
+        # NEVER log self.auth or pass it to any logging/debugging function.
+        # Always source credentials from environment variables and ensure request debugging is disabled.
         self.auth = (username, api_token)
         self.project_key = project_key
         self.headers = {
