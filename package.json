@@ -1,0 +1,36 @@
+{
+  "name": "slasolve",
+  "version": "1.0.0",
+  "description": "SLASolve - Auto-Fix Bot with SLSA provenance capabilities",
+  "private": true,
+  "workspaces": [
+    "mcp-servers",
+    "core/contracts/contracts-L1/contracts",
+    "advanced-system-src"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "install:all": "npm install --workspaces",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
+  },
+  "keywords": [
+    "slsa",
+    "provenance",
+    "auto-fix",
+    "security",
+    "sigstore"
+  ],
+  "author": "SLASolve Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/we-can-fix/slasolve.git"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {}
+}
