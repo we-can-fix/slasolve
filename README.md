@@ -32,7 +32,7 @@ See individual service README files for specific setup instructions.
 This repository includes an automated review and merge workflow that:
 
 1. **Automatically reviews** all Pull Requests
-2. **Fixes common issues** like unused imports and formatting
+2. **Analyzes code** for potential issues like imports and formatting
 3. **Auto-merges** approved PRs to the main branch
 
 For detailed information, see [Auto Review & Merge Documentation](docs/AUTO_REVIEW_MERGE.md).
