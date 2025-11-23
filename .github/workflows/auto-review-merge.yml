@@ -1,0 +1,143 @@
+---
+name: Auto Review and Merge
+
+"on":
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+
+# 可選：如需要處理 draft 變更解除後自動再評估，保留 ready_for_review 事件
+
+jobs:
+  auto-review-merge:
+    # 僅針對目標分支為 main 的 PR
+    if: github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # 允許合併
+      pull-requests: write   # 允許新增審核 / 標記
+      actions: read
+      checks: read
+    steps:
+      - name: 取得 PR 資訊
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            core.info(`PR #${pr.number} from ${pr.head.ref}`);
+            core.info(`Author: ${pr.user.login}`);
+            const labelList = pr.labels.map(l => l.name).join(', ');
+            core.info(`Labels: ${labelList || '(none)'}`);
+
+      - name: 驗證作者是否為組織成員
+        id: membercheck
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const org = context.payload.organization;
+            const ORG = process.env.ORG_NAME ||
+              (org ? org.login : 'my-org');
+            const author = context.payload.pull_request.user.login;
+            try {
+              await github.rest.orgs.checkMembershipForUser({
+                org: ORG,
+                username: author
+              });
+              core.setOutput('member', 'true');
+              core.info(`Author ${author} 是組織成員`);
+            } catch (e) {
+              core.warning(
+                `作者 ${author} 非公開成員或查詢失敗`
+              );
+              core.setOutput('member', 'false');
+            }
+
+      - name: 取用程式碼以執行基本檢查
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Lint 驗證
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "略過 lint (無對應 script)"
+          fi
+
+      - name: 單元測試
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --ci --reporters=default
+          else
+            echo "略過 tests (無對應 script)"
+          fi
+
+      - name: 建置 (可選)
+        run: |
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "略過 build (無對應 script)"
+          fi
+
+      - name: 自動核准 PR (若為組織成員)
+        if: steps.membercheck.outputs.member == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              event: 'APPROVE',
+              body: 'Auto-approved: 組織成員且基本檢查通過'
+            });
+            core.info('已送出自動核准');
+
+      - name: 判斷是否合併
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = pr.labels.map(l => l.name);
+            const memberOut = "${{ steps.membercheck.outputs.member }}";
+            const isMember = memberOut === 'true';
+
+            if (!isMember) {
+              core.info('非組織成員，跳過自動合併');
+              return;
+            }
+            if (!labels.includes('auto-merge')) {
+              core.info('缺少 auto-merge 標籤，跳過合併');
+              return;
+            }
+
+            core.info('符合條件，嘗試合併 PR');
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              merge_method: 'squash'
+            });
+            core.notice('✅ PR 已自動合併');
+
+    env:
+      # 可在 repository 或 org secret 中設定 ORG_NAME，避免硬編碼
+      ORG_NAME: ${{ secrets.ORG_NAME }}
+
+# 使用說明：
+# 1. 在 Settings > Secrets 新增 ORG_NAME=你的組織名稱 (若無 organization context)。
+# 2. 對欲自動合併的 PR 加上標籤 auto-merge。
+# 3. 確保分支保護規則允許由 workflow 產生的審核滿足要求 (或降低 required reviewers)。
+# 4. 若需更嚴格條件，可新增：檔案變更範圍、commit 簽名檢查、SLSA 驗證等。
