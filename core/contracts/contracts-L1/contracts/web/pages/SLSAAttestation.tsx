@@ -321,7 +321,6 @@ export default function SLSAAttestation() {
                 
                 <form onSubmit={(e) => {
                   e.preventDefault();
-                  const formData = new FormData(e.target);
                   // 處理合約認證邏輯
                 }} className="space-y-4">
                   
