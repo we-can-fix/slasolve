@@ -23,7 +23,7 @@ VS Code workspace settings include:
 
 - **Formatter**: Prettier (default formatter)
 - **Format on Save**: Enabled
-- **Tab Size**: 2 spaces
+- **Indentation**: 2 spaces
 - **ESLint**: Auto-fix on save
 - **TypeScript**: Relative imports, auto-update imports on file move
 - **File Exclusions**: node_modules, dist, .git (from search and explorer)
