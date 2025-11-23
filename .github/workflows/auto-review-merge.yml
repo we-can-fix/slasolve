@@ -19,7 +19,7 @@ jobs:
       checks: read
     steps:
       - name: 取得 PR 資訊
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -30,7 +30,7 @@ jobs:
 
       - name: 驗證作者是否為組織成員
         id: membercheck
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const org = context.payload.organization;
@@ -52,7 +52,7 @@ jobs:
             }
 
       - name: 驗證作者是否為協作者 (write 權限) 或組織成員
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -95,7 +95,7 @@ jobs:
 
       - name: 自動核准 PR (若為組織成員)
         if: steps.membercheck.outputs.member == 'true'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             await github.rest.pulls.createReview({
@@ -109,7 +109,7 @@ jobs:
 
       - name: 判斷是否合併
         if: success()
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const pr = context.payload.pull_request;
