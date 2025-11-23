@@ -8,7 +8,7 @@ import requests
 import json
 import os
 import sys
-from typing import Dict, Optional
+from typing import Optional
 
 
 class JiraIntegration:
