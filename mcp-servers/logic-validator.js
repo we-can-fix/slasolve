@@ -10,6 +10,7 @@
  */
 
 import { createHash } from 'crypto';
+import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 /**
@@ -19,7 +20,7 @@ class LogicValidator {
   /**
    * Validate code logic and authenticity
    */
-  validate(code, options = {}) {
+  validate(code, _options = {}) {
     const validation = {
       timestamp: new Date().toISOString(),
       valid: true,
@@ -498,6 +499,7 @@ async function main() {
 }
 
 // Run if executed directly
+
   main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);

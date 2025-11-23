@@ -252,7 +252,7 @@ class DocGenerator {
     return lines.join('\n');
   }
 
-  _formatClassJSDoc(cls, style) {
+  _formatClassJSDoc(cls, _style) {
     const lines = [
       '/**',
       ` * ${cls.existingDoc || `Class: ${cls.name}`}`,
@@ -268,7 +268,7 @@ class DocGenerator {
     return lines.join('\n');
   }
 
-  _generateEndpointDoc(endpoint, format) {
+  _generateEndpointDoc(endpoint, _format) {
     return {
       method: endpoint.method.toUpperCase(),
       path: endpoint.path,
@@ -449,7 +449,7 @@ async function main() {
     }
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: [
       {
         name: 'generate-jsdoc',
@@ -517,7 +517,7 @@ async function main() {
     ]
   }));
 
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
