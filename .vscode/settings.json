@@ -1,22 +1,5 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": true,
-  "editor.tabSize": 2,
-  "editor.insertSpaces": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
-  },
-  "typescript.tsdk": "${workspaceFolder}/core/contracts/contracts-L1/contracts/node_modules/typescript/lib",
-  "typescript.preferences.importModuleSpecifier": "relative",
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "files.exclude": {
-    "**/node_modules": true,
-    "**/dist": true,
-    "**/.git": true
-  },
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/dist": true
+
   },
   "eslint.validate": [
     "javascript",
@@ -24,5 +7,4 @@
     "typescript",
     "typescriptreact"
   ],
-  "jest.autoRun": "off"
 }
