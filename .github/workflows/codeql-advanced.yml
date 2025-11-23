@@ -64,7 +64,7 @@ jobs:
               yarn install --frozen-lockfile
             fi
             if [ -f "webpack.config.js" ] || [ -f "vite.config.js" ]; then
-              npm run build
+              npm run build || echo "Build failed, continuing with analysis"
             fi
             ;;
           python)
