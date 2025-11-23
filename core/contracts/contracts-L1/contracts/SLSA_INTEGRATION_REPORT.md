@@ -7,6 +7,7 @@
 ## 已完成的功能
 
 ### 1. 核心 SLSA 服務 (`attestation.ts`)
+
 - **SLSAAttestationService**: 完整的 SLSA v1 認證服務
 - **功能**:
   - 創建 SLSA 溯源認證
@@ -16,6 +17,7 @@
   - 完整的 SLSA 規範實現
 
 ### 2. SLSA 控制器 (`slsa.ts`)
+
 提供 RESTful API 端點：
 
 - `POST /api/v1/slsa/attestations` - 創建 SLSA 認證
@@ -25,20 +27,23 @@
 - `POST /api/v1/slsa/summary` - 認證摘要資訊
 
 ### 3. 增強的溯源服務 (`provenance.ts`)
+
 - 整合 SLSA 功能到現有的溯源服務
 - 支援與現有 API 的向後相容性
 - 在 BuildAttestation 中添加 `slsaProvenance` 欄位
 
 ### 4. 配置和構建
+
 - 創建 `tsconfig.json` 配置
 - 更新 `package.json` 添加所需依賴項
 - 添加 `start` 腳本
 
 ## 測試的功能
 
-### 成功測試的端點：
+### 成功測試的端點
 
 1. **摘要生成**:
+
    ```bash
    POST /api/v1/slsa/digest
    # 輸入: {"content": "console.log(\"Hello, SLSA!\");"}
@@ -46,12 +51,14 @@
    ```
 
 2. **SLSA 認證創建**:
+
    ```bash
    POST /api/v1/slsa/attestations
    # 創建符合 SLSA v1 規範的完整溯源認證
    ```
 
 3. **合約部署認證**:
+
    ```bash
    POST /api/v1/slsa/contracts
    # 為智能合約部署創建專門的認證
@@ -60,19 +67,22 @@
 ## 技術規格
 
 ### SLSA 規範支援
+
 - **規範版本**: SLSA v1
 - **認證類型**: `https://slsa.dev/provenance/v1`
-- **構建類型**: 
+- **構建類型**:
   - `https://slasolve.dev/contracts/build/v1` (一般構建)
   - `https://slasolve.dev/contracts/deployment/v1` (合約部署)
 
 ### 安全功能
+
 - SHA256 內容摘要
 - 結構化認證驗證
 - 完整的溯源鏈記錄
 - 時間戳和唯一識別符
 
 ### 依賴項
+
 - `@sigstore/sign`: 數位簽章支援
 - `@sigstore/verify`: 簽章驗證
 - `crypto`: 摘要生成
