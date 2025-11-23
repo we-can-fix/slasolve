@@ -47,7 +47,3 @@ The workflow runs automatically on:
 No additional setup required! 🎉
 
 ## 📚 Documentation
-
-- [Auto Review & Merge Guide](docs/AUTO_REVIEW_MERGE.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Security Policy](SECURITY.md)

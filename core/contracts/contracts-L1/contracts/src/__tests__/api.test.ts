@@ -1,13 +1,28 @@
 import request from 'supertest';
-import { app } from '../server';
+import express from 'express';
+import routes from '../routes';
+import { loggingMiddleware } from '../middleware/logging';
+import { errorMiddleware } from '../middleware/error';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
+// 創建測試用的獨立應用
+const createTestApp = () => {
+  const app = express();
+  app.use(express.json());
+  app.use(loggingMiddleware);
+  app.use(routes);
+  app.use(errorMiddleware);
+  return app;
+};
+
 describe('Provenance API Endpoints', () => {
   let testFilePath: string;
+  let app: express.Application;
 
   beforeEach(async () => {
+    app = createTestApp();
     testFilePath = join(tmpdir(), `test-api-${Date.now()}.txt`);
     await writeFile(testFilePath, 'test content for API testing');
   });
@@ -20,10 +35,10 @@ describe('Provenance API Endpoints', () => {
     }
   });
 
-  describe('POST /api/v1/provenance/attest', () => {
+  describe('POST /api/v1/provenance/attestations', () => {
     it('should create attestation for valid file', async () => {
       const response = await request(app)
-        .post('/api/v1/provenance/attest')
+        .post('/api/v1/provenance/attestations')
         .send({
           filePath: testFilePath,
           builder: {
@@ -53,7 +68,7 @@ describe('Provenance API Endpoints', () => {
 
     it('should return 400 for missing filePath', async () => {
       const response = await request(app)
-        .post('/api/v1/provenance/attest')
+        .post('/api/v1/provenance/attestations')
         .send({
           builder: {
             id: 'test-builder',
@@ -67,8 +82,9 @@ describe('Provenance API Endpoints', () => {
     });
 
     it('should return 400 for missing builder', async () => {
+      const app = createTestApp();
       const response = await request(app)
-        .post('/api/v1/provenance/attest')
+        .post('/api/v1/provenance/attestations')
         .send({
           filePath: testFilePath
         });
@@ -80,7 +96,7 @@ describe('Provenance API Endpoints', () => {
 
     it('should return 404 for non-existent file', async () => {
       const response = await request(app)
-        .post('/api/v1/provenance/attest')
+        .post('/api/v1/provenance/attestations')
         .send({
           filePath: '/non/existent/file.txt',
           builder: {
@@ -98,7 +114,7 @@ describe('Provenance API Endpoints', () => {
     it('should verify valid attestation', async () => {
       // First create an attestation
       const createResponse = await request(app)
-        .post('/api/v1/provenance/attest')
+        .post('/api/v1/provenance/attestations')
         .send({
           filePath: testFilePath,
           builder: {
@@ -147,11 +163,10 @@ describe('Provenance API Endpoints', () => {
 
   describe('POST /api/v1/provenance/digest', () => {
     it('should calculate file digest', async () => {
+      // Encode file path for URL
+      const encodedPath = encodeURIComponent(testFilePath);
       const response = await request(app)
-        .post('/api/v1/provenance/digest')
-        .send({
-          filePath: testFilePath
-        });
+        .get(`/api/v1/provenance/digest/${encodedPath}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -161,20 +176,17 @@ describe('Provenance API Endpoints', () => {
 
     it('should return 400 for missing filePath', async () => {
       const response = await request(app)
-        .post('/api/v1/provenance/digest')
-        .send({});
+        .get('/api/v1/provenance/digest/');
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toContain('filePath');
     });
 
     it('should return 404 for non-existent file', async () => {
+      const encodedPath = encodeURIComponent('/non/existent/file.txt');
       const response = await request(app)
-        .post('/api/v1/provenance/digest')
-        .send({
-          filePath: '/non/existent/file.txt'
-        });
+        .get(`/api/v1/provenance/digest/${encodedPath}`);
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -185,7 +197,7 @@ describe('Provenance API Endpoints', () => {
     it('should import valid attestation JSON', async () => {
       // First create an attestation
       const createResponse = await request(app)
-        .post('/api/v1/provenance/attest')
+        .post('/api/v1/provenance/attestations')
         .send({
           filePath: testFilePath,
           builder: {

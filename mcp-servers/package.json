@@ -1,30 +1,38 @@
 {
-  "name": "slasolve-mcp-servers",
+  "name": "@slasolve/mcp-servers",
   "version": "1.0.0",
-  "description": "MCP servers for AutoExecutionEngine Custom Agent",
+  "description": "Enterprise-grade MCP servers for AutoExecutionEngine Agent",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start:code-analyzer": "node code-analyzer.js",
-    "start:test-generator": "node test-generator.js",
-    "start:doc-generator": "node doc-generator.js",
-    "start:slsa-validator": "node slsa-validator.js",
-    "start:security-scanner": "node security-scanner.js",
-    "start:performance-analyzer": "node performance-analyzer.js",
-    "validate": "node --check code-analyzer.js && node --check test-generator.js && node --check doc-generator.js && node --check slsa-validator.js && node --check security-scanner.js && node --check performance-analyzer.js"
+    "start": "node index.js",
+    "lint": "eslint *.js --max-warnings 0",
+    "lint:fix": "eslint *.js --fix",
+    "test": "node --test",
+    "validate:deployment": "node deployment-validator.js",
+    "validate:logic": "node logic-validator.js",
+    "validate:comprehensive": "node comprehensive-validator.js",
+    "validate:all": "npm run lint && npm run validate:deployment && npm run validate:logic",
+    "check:strict": "npm run validate:comprehensive",
+    "precommit": "npm run check:strict"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "slsa",
     "provenance",
-    "testing",
-    "security"
+    "code-analysis"
   ],
-  "author": "AutoExecutionEngine Team",
+  "author": "SLASolve Team",
   "license": "MIT",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0"
-  },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0"
   }
 }

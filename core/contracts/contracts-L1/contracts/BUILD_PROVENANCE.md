@@ -7,6 +7,7 @@ This integration provides SLSA (Supply Chain Levels for Software Artifacts) buil
 ## Features
 
 ### Core Capabilities
+
 - **Build Attestation Generation**: Create cryptographically signed attestations for build artifacts
 - **Provenance Tracking**: Record detailed information about the build process and environment
 - **Integrity Verification**: Verify the authenticity and integrity of build attestations
@@ -15,6 +16,7 @@ This integration provides SLSA (Supply Chain Levels for Software Artifacts) buil
 ### API Endpoints
 
 #### 1. Create Build Attestation
+
 ```http
 POST /api/v1/provenance/attestations
 Content-Type: application/json
@@ -33,6 +35,7 @@ Content-Type: application/json
 ```
 
 #### 2. Verify Attestation
+
 ```http
 POST /api/v1/provenance/verify
 Content-Type: application/json
@@ -45,11 +48,13 @@ Content-Type: application/json
 ```
 
 #### 3. Get File Digest
+
 ```http
 GET /api/v1/provenance/digest/path/to/file
 ```
 
 #### 4. Import Attestation
+
 ```http
 POST /api/v1/provenance/import
 Content-Type: application/json
@@ -62,6 +67,7 @@ Content-Type: application/json
 ## Data Structures
 
 ### BuildAttestation
+
 ```typescript
 interface BuildAttestation {
   id: string;                // Unique attestation identifier
@@ -83,6 +89,7 @@ interface BuildAttestation {
 ```
 
 ### BuilderInfo
+
 ```typescript
 interface BuilderInfo {
   id: string;                        // Builder identifier URI
@@ -108,6 +115,7 @@ interface BuilderInfo {
 ### Usage Examples
 
 #### Basic Attestation Creation
+
 ```typescript
 import { ProvenanceService } from './services/provenance';
 
@@ -122,6 +130,7 @@ const attestation = await service.createBuildAttestation(
 ```
 
 #### Verification
+
 ```typescript
 const isValid = await service.verifyAttestation(attestation);
 console.log('Attestation valid:', isValid);
@@ -130,6 +139,7 @@ console.log('Attestation valid:', isValid);
 ### Error Handling
 
 All API endpoints follow the standard SLASolve error response format:
+
 ```json
 {
   "error": {
