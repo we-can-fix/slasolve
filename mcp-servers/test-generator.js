@@ -2,321 +2,718 @@
 
 /**
  * Test Generator MCP Server
+ * Enterprise-grade test generation for unit, integration, and e2e tests
  * 
- * Generates unit, integration, and e2e tests for the AutoExecutionEngine.
+ * @module test-generator
+ * @author SLASolve Team
+ * @license MIT
  */
 
-import { createInterface } from 'readline';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ErrorCode,
+  McpError
+} from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
 
-const tools = [
-  {
-    name: "generate_unit_tests",
-    description: "為函數生成單元測試",
-    input_schema: {
-      type: "object",
-      properties: {
-        functionName: {
-          type: "string",
-          description: "函數名稱",
-        },
-        functionCode: {
-          type: "string",
-          description: "函數代碼",
-        },
-        testFramework: {
-          type: "string",
-          enum: ["jest", "mocha", "vitest"],
-          description: "測試框架",
-        },
-      },
-      required: ["functionName", "functionCode"],
-    },
-  },
-  {
-    name: "generate_integration_tests",
-    description: "生成集成測試",
-    input_schema: {
-      type: "object",
-      properties: {
-        moduleName: {
-          type: "string",
-          description: "模塊名稱",
-        },
-        dependencies: {
-          type: "array",
-          items: { type: "string" },
-          description: "依賴列表",
-        },
-      },
-      required: ["moduleName"],
-    },
-  },
-  {
-    name: "generate_test_vectors",
-    description: "生成測試向量",
-    input_schema: {
-      type: "object",
-      properties: {
-        functionName: {
-          type: "string",
-          description: "函數名稱",
-        },
-        inputSchema: {
-          type: "object",
-          description: "輸入模式",
-        },
-      },
-      required: ["functionName", "inputSchema"],
-    },
-  },
-];
-
-async function generateUnitTests(functionName, functionCode, testFramework = "jest") {
-  const testTemplate = `
-describe('${functionName}', () => {
-  let mockDependency;
-
-  beforeEach(() => {
-    mockDependency = jest.fn();
-  });
-
-  it('should handle valid input successfully', () => {
-    // Arrange
-    const input = { /* test data */ };
-    
-    // Act
-    const result = ${functionName}(input);
-    
-    // Assert
-    expect(result).toBeDefined();
-  });
-
-  it('should handle edge cases', () => {
-    expect(${functionName}(null)).toBeNull();
-    expect(${functionName}(undefined)).toBeUndefined();
-  });
-
-  it('should throw error for invalid input', () => {
-    expect(() => ${functionName}({})).toThrow();
-  });
+// Validation schemas
+const GenerateUnitTestsSchema = z.object({
+  code: z.string().min(1, 'Code content is required'),
+  _framework: z.enum(['jest', 'mocha', 'vitest']).optional().default('jest'),
+  coverage: z.enum(['basic', 'comprehensive', 'exhaustive']).optional().default('comprehensive')
 });
-`;
 
-  return {
-    functionName,
-    testFramework,
-    testCode: testTemplate.trim(),
-    coverage: {
-      lines: 85,
-      branches: 80,
-      functions: 100,
-    },
-    timestamp: new Date().toISOString(),
-  };
-}
-
-async function generateIntegrationTests(moduleName, dependencies = []) {
-  const testTemplate = `
-describe('${moduleName} Integration', () => {
-  let module;
-  ${dependencies.map(dep => `let ${dep};`).join('\n  ')}
-
-  beforeAll(async () => {
-    // Setup integration test environment
-    ${dependencies.map(dep => `${dep} = await setup${dep}();`).join('\n    ')}
-    module = new ${moduleName}(${dependencies.join(', ')});
-  });
-
-  afterAll(async () => {
-    // Cleanup
-    ${dependencies.map(dep => `await ${dep}.close();`).join('\n    ')}
-  });
-
-  it('should integrate with dependencies correctly', async () => {
-    const result = await module.execute();
-    expect(result).toBeDefined();
-  });
-
-  it('should handle failures gracefully', async () => {
-    ${dependencies[0] ? `${dependencies[0]}.simulateFailure();` : ''}
-    await expect(module.execute()).rejects.toThrow();
-  });
+const GenerateIntegrationTestsSchema = z.object({
+  endpoints: z.array(z.object({
+    method: z.string(),
+    path: z.string(),
+    description: z.string().optional()
+  })).min(1, 'At least one endpoint is required'),
+  _framework: z.enum(['jest', 'supertest', 'chai']).optional().default('jest')
 });
-`;
 
-  return {
-    moduleName,
-    dependencies,
-    testCode: testTemplate.trim(),
-    timestamp: new Date().toISOString(),
-  };
-}
+const GenerateE2ETestsSchema = z.object({
+  scenarios: z.array(z.object({
+    name: z.string(),
+    steps: z.array(z.string()),
+    assertions: z.array(z.string()).optional()
+  })).min(1, 'At least one scenario is required'),
+  _framework: z.enum(['playwright', 'cypress', 'puppeteer']).optional().default('playwright')
+});
 
-async function generateTestVectors(functionName, inputSchema) {
-  const vectors = [
-    {
-      id: `${functionName}-vector-001`,
-      name: "Valid input test",
-      description: "測試有效輸入",
-      inputs: inputSchema,
-      expectedOutput: { success: true },
-    },
-    {
-      id: `${functionName}-vector-002`,
-      name: "Empty input test",
-      description: "測試空輸入",
-      inputs: {},
-      expectedOutput: { success: false, error: "Invalid input" },
-    },
-    {
-      id: `${functionName}-vector-003`,
-      name: "Boundary test",
-      description: "測試邊界情況",
-      inputs: { value: Number.MAX_SAFE_INTEGER },
-      expectedOutput: { success: true },
-    },
-  ];
+/**
+ * Test generation engine
+ */
+class TestGenerator {
+  /**
+   * Generate unit tests
+   */
+  generateUnitTests(code, _framework = 'jest', coverage = 'comprehensive') {
+    const functions = this._extractFunctions(code);
+    const classes = this._extractClasses(code);
+    
+    const tests = {
+      _framework,
+      totalTests: 0,
+      testSuites: []
+    };
 
-  return {
-    functionName,
-    vectors,
-    count: vectors.length,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-async function processToolCall(toolName, toolInput) {
-  try {
-    switch (toolName) {
-      case "generate_unit_tests":
-        return await generateUnitTests(
-          toolInput.functionName,
-          toolInput.functionCode,
-          toolInput.testFramework
-        );
-
-      case "generate_integration_tests":
-        return await generateIntegrationTests(
-          toolInput.moduleName,
-          toolInput.dependencies
-        );
-
-      case "generate_test_vectors":
-        return await generateTestVectors(
-          toolInput.functionName,
-          toolInput.inputSchema
-        );
-
-      default:
-        throw new Error(`Unknown tool: ${toolName}`);
+    // Generate tests for functions
+    for (const func of functions) {
+      const suite = this._generateFunctionTests(func, _framework, coverage);
+      tests.testSuites.push(suite);
+      tests.totalTests += suite.tests.length;
     }
-  } catch (error) {
+
+    // Generate tests for classes
+    for (const cls of classes) {
+      const suite = this._generateClassTests(cls, _framework, coverage);
+      tests.testSuites.push(suite);
+      tests.totalTests += suite.tests.length;
+    }
+
+    tests.code = this._generateTestCode(tests, _framework);
+
+    return tests;
+  }
+
+  /**
+   * Generate integration tests
+   */
+  generateIntegrationTests(endpoints, _framework = 'jest') {
+    const tests = {
+      _framework,
+      totalTests: 0,
+      testSuites: []
+    };
+
+    // Group endpoints by resource
+    const grouped = this._groupEndpointsByResource(endpoints);
+
+    for (const [resource, resourceEndpoints] of Object.entries(grouped)) {
+      const suite = this._generateEndpointTests(resource, resourceEndpoints, _framework);
+      tests.testSuites.push(suite);
+      tests.totalTests += suite.tests.length;
+    }
+
+    tests.code = this._generateIntegrationTestCode(tests, _framework);
+
+    return tests;
+  }
+
+  /**
+   * Generate end-to-end tests
+   */
+  generateE2ETests(scenarios, _framework = 'playwright') {
+    const tests = {
+      _framework,
+      totalTests: scenarios.length,
+      testSuites: []
+    };
+
+    for (const scenario of scenarios) {
+      const suite = this._generateScenarioTest(scenario, _framework);
+      tests.testSuites.push(suite);
+    }
+
+    tests.code = this._generateE2ETestCode(tests, _framework);
+
+    return tests;
+  }
+
+  // Private helper methods
+
+  _extractFunctions(code) {
+    const functions = [];
+    const functionRegex = /(?:function\s+(\w+)\s*\([^)]*\)|const\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>)/g;
+    
+    let match;
+    while ((match = functionRegex.exec(code)) !== null) {
+      const name = match[1] || match[2];
+      const startIndex = match.index;
+      const params = this._extractParameters(code, startIndex);
+      
+      functions.push({
+        name,
+        params,
+        isAsync: code.substring(startIndex, startIndex + 50).includes('async')
+      });
+    }
+
+    return functions;
+  }
+
+  _extractClasses(code) {
+    const classes = [];
+    const classRegex = /class\s+(\w+)(?:\s+extends\s+(\w+))?\s*{/g;
+    
+    let match;
+    while ((match = classRegex.exec(code)) !== null) {
+      const name = match[1];
+      const parent = match[2];
+      const methods = this._extractClassMethods(code, match.index);
+      
+      classes.push({
+        name,
+        parent,
+        methods
+      });
+    }
+
+    return classes;
+  }
+
+  _extractParameters(code, startIndex) {
+    const paramMatch = code.substring(startIndex).match(/\(([^)]*)\)/);
+    if (!paramMatch) {
+return [];
+}
+    
+    return paramMatch[1]
+      .split(',')
+      .map(p => p.trim())
+      .filter(p => p.length > 0)
+      .map(p => {
+        const [name, defaultValue] = p.split('=').map(s => s.trim());
+        return { name, hasDefault: Boolean(defaultValue) };
+      });
+  }
+
+  _extractClassMethods(code, classStartIndex) {
+    const methods = [];
+    const classCode = code.substring(classStartIndex);
+    const methodRegex = /(?:async\s+)?(\w+)\s*\([^)]*\)\s*{/g;
+    
+    let match;
+    let depth = 0;
+    let foundClassOpen = false;
+    
+    for (let i = 0; i < classCode.length; i++) {
+      if (classCode[i] === '{') {
+        if (!foundClassOpen) {
+          foundClassOpen = true;
+        } else {
+          depth++;
+        }
+      } else if (classCode[i] === '}') {
+        if (depth === 0) {
+break;
+}
+        depth--;
+      }
+    }
+
+    const classBody = classCode.substring(0, classCode.indexOf('}', classCode.indexOf('{') + 1));
+    
+    while ((match = methodRegex.exec(classBody)) !== null) {
+      const name = match[1];
+      if (name !== 'constructor') {
+        methods.push({
+          name,
+          isAsync: classBody.substring(match.index, match.index + 10).includes('async')
+        });
+      }
+    }
+
+    return methods;
+  }
+
+  _generateFunctionTests(func, _framework, coverage) {
+    const tests = [];
+    
+    // Happy path test
+    tests.push({
+      name: `should ${func.name} successfully with valid input`,
+      type: 'happy-path',
+      code: this._generateHappyPathTest(func, _framework)
+    });
+
+    if (coverage !== 'basic') {
+      // Edge case tests
+      tests.push({
+        name: `should handle edge cases for ${func.name}`,
+        type: 'edge-case',
+        code: this._generateEdgeCaseTest(func, _framework)
+      });
+
+      // Error handling tests
+      tests.push({
+        name: `should handle errors in ${func.name}`,
+        type: 'error-handling',
+        code: this._generateErrorTest(func, _framework)
+      });
+    }
+
+    if (coverage === 'exhaustive') {
+      // Parameter validation tests
+      for (const param of func.params) {
+        tests.push({
+          name: `should validate ${param.name} parameter`,
+          type: 'validation',
+          code: this._generateValidationTest(func, param, _framework)
+        });
+      }
+    }
+
     return {
-      error: error.message,
-      timestamp: new Date().toISOString(),
+      name: func.name,
+      type: 'function',
+      tests
     };
   }
-}
 
-async function handleMessage(message) {
-  try {
-    const request = JSON.parse(message);
+  _generateClassTests(cls, _framework, coverage) {
+    const tests = [];
+    
+    // Constructor test
+    tests.push({
+      name: `should create instance of ${cls.name}`,
+      type: 'constructor',
+      code: this._generateConstructorTest(cls, _framework)
+    });
 
-    if (request.method === "tools/list") {
-      return {
-        jsonrpc: "2.0",
-        id: request.id,
-        result: { tools },
-      };
-    }
+    // Method tests
+    for (const method of cls.methods) {
+      tests.push({
+        name: `should ${method.name} correctly`,
+        type: 'method',
+        code: this._generateMethodTest(cls, method, _framework)
+      });
 
-    if (request.method === "tools/call") {
-      const result = await processToolCall(
-        request.params.name,
-        request.params.arguments
-      );
-
-      return {
-        jsonrpc: "2.0",
-        id: request.id,
-        result: {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        },
-      };
-    }
-
-    if (request.method === "initialize") {
-      return {
-        jsonrpc: "2.0",
-        id: request.id,
-        result: {
-          protocolVersion: "1.0.0",
-          serverInfo: {
-            name: "test-generator",
-            version: "1.0.0",
-          },
-          capabilities: {
-            tools: {},
-          },
-        },
-      };
+      if (coverage !== 'basic') {
+        tests.push({
+          name: `should handle ${method.name} errors`,
+          type: 'error-handling',
+          code: this._generateMethodErrorTest(cls, method, _framework)
+        });
+      }
     }
 
     return {
-      jsonrpc: "2.0",
-      id: request.id,
-      error: {
-        code: -32601,
-        message: "Method not found",
-      },
-    };
-  } catch (error) {
-    return {
-      jsonrpc: "2.0",
-      id: null,
-      error: {
-        code: -32700,
-        message: "Parse error: " + error.message,
-      },
+      name: cls.name,
+      type: 'class',
+      tests
     };
   }
-}
 
-async function main() {
-  const args = process.argv.slice(2);
+  _generateHappyPathTest(func, _framework) {
+    const testParams = func.params.map(p => `'test-${p.name}'`).join(', ');
+    
+    return `test('${func.name} should work with valid input', ${func.isAsync ? 'async ' : ''}() => {
+  const result = ${func.isAsync ? 'await ' : ''}${func.name}(${testParams});
+  expect(result).toBeDefined();
+  expect(result).not.toBeNull();
+});`;
+  }
+
+  _generateEdgeCaseTest(func, _framework) {
+    return `test('${func.name} should handle edge cases', ${func.isAsync ? 'async ' : ''}() => {
+  // Test with empty values
+  const result1 = ${func.isAsync ? 'await ' : ''}${func.name}(${func.params.map(() => "''").join(', ')});
+  expect(result1).toBeDefined();
   
-  if (args.includes('--validate')) {
-    console.log('Test Generator MCP Server validation passed');
-    process.exit(0);
+  // Test with boundary values
+  const result2 = ${func.isAsync ? 'await ' : ''}${func.name}(${func.params.map(() => '0').join(', ')});
+  expect(result2).toBeDefined();
+});`;
   }
 
-  const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
-  if (LOG_LEVEL === 'info') {
-    console.error('Test Generator MCP Server started');
+  _generateErrorTest(func, _framework) {
+    return `test('${func.name} should handle errors gracefully', ${func.isAsync ? 'async ' : ''}() => {
+  ${func.isAsync ? 'await ' : ''}expect(${func.isAsync ? 'async () => ' : ''}${func.name}(${func.params.map(() => 'null').join(', ')}))${func.isAsync ? '.rejects' : ''}.toThrow();
+});`;
   }
 
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false,
-  });
+  _generateValidationTest(func, param, _framework) {
+    return `test('${func.name} should validate ${param.name} parameter', ${func.isAsync ? 'async ' : ''}() => {
+  const invalidValues = [null, undefined, '', 0, false];
+  
+  for (const value of invalidValues) {
+    ${func.isAsync ? 'await ' : ''}expect(${func.isAsync ? 'async () => ' : ''}${func.name}(value))${func.isAsync ? '.rejects' : ''}.toThrow();
+  }
+});`;
+  }
 
-  rl.on('line', async (line) => {
-    const response = await handleMessage(line);
-    console.log(JSON.stringify(response));
-  });
+  _generateConstructorTest(cls, _framework) {
+    return `test('should create ${cls.name} instance', () => {
+  const instance = new ${cls.name}();
+  expect(instance).toBeInstanceOf(${cls.name});
+  ${cls.parent ? `expect(instance).toBeInstanceOf(${cls.parent});` : ''}
+});`;
+  }
 
-  rl.on('close', () => {
-    if (LOG_LEVEL === 'info') {
-      console.error('Test Generator MCP Server stopped');
+  _generateMethodTest(cls, method, _framework) {
+    return `test('${cls.name}.${method.name} should work correctly', ${method.isAsync ? 'async ' : ''}() => {
+  const instance = new ${cls.name}();
+  const result = ${method.isAsync ? 'await ' : ''}instance.${method.name}();
+  expect(result).toBeDefined();
+});`;
+  }
+
+  _generateMethodErrorTest(cls, method, _framework) {
+    return `test('${cls.name}.${method.name} should handle errors', ${method.isAsync ? 'async ' : ''}() => {
+  const instance = new ${cls.name}();
+  ${method.isAsync ? 'await ' : ''}expect(${method.isAsync ? 'async () => ' : ''}instance.${method.name}(null))${method.isAsync ? '.rejects' : ''}.toThrow();
+});`;
+  }
+
+  _groupEndpointsByResource(endpoints) {
+    const grouped = {};
+    
+    for (const endpoint of endpoints) {
+      const resource = endpoint.path.split('/')[1] || 'root';
+      if (!grouped[resource]) {
+        grouped[resource] = [];
+      }
+      grouped[resource].push(endpoint);
     }
-    process.exit(0);
+
+    return grouped;
+  }
+
+  _generateEndpointTests(resource, endpoints, _framework) {
+    const tests = [];
+
+    for (const endpoint of endpoints) {
+      // Success test
+      tests.push({
+        name: `${endpoint.method} ${endpoint.path} should return 200`,
+        type: 'success',
+        code: this._generateEndpointSuccessTest(endpoint, _framework)
+      });
+
+      // Error test
+      tests.push({
+        name: `${endpoint.method} ${endpoint.path} should handle errors`,
+        type: 'error',
+        code: this._generateEndpointErrorTest(endpoint, _framework)
+      });
+
+      // Validation test
+      if (['POST', 'PUT', 'PATCH'].includes(endpoint.method.toUpperCase())) {
+        tests.push({
+          name: `${endpoint.method} ${endpoint.path} should validate input`,
+          type: 'validation',
+          code: this._generateEndpointValidationTest(endpoint, _framework)
+        });
+      }
+    }
+
+    return {
+      name: resource,
+      type: 'integration',
+      tests
+    };
+  }
+
+  _generateEndpointSuccessTest(endpoint, _framework) {
+    const method = endpoint.method.toLowerCase();
+    return `test('${endpoint.method} ${endpoint.path} should succeed', async () => {
+  const response = await request(app)
+    .${method}('${endpoint.path}')
+    ${['post', 'put', 'patch'].includes(method) ? ".send({ /* test data */ })" : ''}
+    .expect(200);
+    
+  expect(response.body).toBeDefined();
+  expect(response.body.success).toBe(true);
+});`;
+  }
+
+  _generateEndpointErrorTest(endpoint, _framework) {
+    return `test('${endpoint.method} ${endpoint.path} should handle errors', async () => {
+  const response = await request(app)
+    .${endpoint.method.toLowerCase()}('${endpoint.path}')
+    .send({ /* invalid data */ })
+    .expect(400);
+    
+  expect(response.body.error).toBeDefined();
+});`;
+  }
+
+  _generateEndpointValidationTest(endpoint, _framework) {
+    return `test('${endpoint.method} ${endpoint.path} should validate input', async () => {
+  const invalidData = {};
+  
+  const response = await request(app)
+    .${endpoint.method.toLowerCase()}('${endpoint.path}')
+    .send(invalidData)
+    .expect(400);
+    
+  expect(response.body.error).toMatch(/validation/i);
+});`;
+  }
+
+  _generateScenarioTest(scenario, _framework) {
+    const steps = scenario.steps.map((step, index) => 
+      `  // Step ${index + 1}: ${step}\n  await page.click('/* selector */');\n  await page.waitForTimeout(1000);`
+    ).join('\n');
+
+    const assertions = scenario.assertions?.map(assertion =>
+      `  expect(await page.textContent('/* selector */')).toContain('${assertion}');`
+    ).join('\n') || '  // Add assertions';
+
+    return {
+      name: scenario.name,
+      type: 'e2e',
+      tests: [{
+        name: scenario.name,
+        type: 'scenario',
+        code: `test('${scenario.name}', async ({ page }) => {
+${steps}
+
+${assertions}
+});`
+      }]
+    };
+  }
+
+  _generateTestCode(tests, _framework) {
+    const imports = this._getFrameworkImports(_framework);
+    const suites = tests.testSuites.map(suite => 
+      `describe('${suite.name}', () => {
+${suite.tests.map(t => '  ' + t.code).join('\n\n')}
+});`
+    ).join('\n\n');
+
+    return `${imports}\n\n${suites}`;
+  }
+
+  _generateIntegrationTestCode(tests, _framework) {
+    const imports = `import request from 'supertest';
+import { app } from '../server';
+
+`;
+    const suites = tests.testSuites.map(suite =>
+      `describe('${suite.name} endpoints', () => {
+${suite.tests.map(t => '  ' + t.code).join('\n\n')}
+});`
+    ).join('\n\n');
+
+    return `${imports}\n${suites}`;
+  }
+
+  _generateE2ETestCode(tests, _framework) {
+    const imports = _framework === 'playwright' 
+      ? "import { test, expect } from '@playwright/test';\n\n"
+      : "import { describe, it, expect } from 'vitest';\n\n";
+
+    const suites = tests.testSuites.map(suite =>
+      suite.tests.map(t => t.code).join('\n\n')
+    ).join('\n\n');
+
+    return `${imports}${suites}`;
+  }
+
+  _getFrameworkImports(_framework) {
+    const imports = {
+      jest: "import { describe, test, expect } from '@jest/globals';",
+      mocha: "import { describe, it } from 'mocha';\nimport { expect } from 'chai';",
+      vitest: "import { describe, test, expect } from 'vitest';"
+    };
+
+    return imports[_framework] || imports.jest;
+  }
+}
+
+/**
+ * Initialize and start the MCP server
+ */
+async function main() {
+  const generator = new TestGenerator();
+  const server = new Server(
+    {
+      name: 'test-generator',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  // List available tools
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: [
+      {
+        name: 'generate-unit-tests',
+        description: 'Generate comprehensive unit tests for functions and classes',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            code: {
+              type: 'string',
+              description: 'The source code to generate tests for'
+            },
+            framework: {
+              type: 'string',
+              enum: ['jest', 'mocha', 'vitest'],
+              description: 'Testing framework',
+              default: 'jest'
+            },
+            coverage: {
+              type: 'string',
+              enum: ['basic', 'comprehensive', 'exhaustive'],
+              description: 'Test coverage level',
+              default: 'comprehensive'
+            }
+          },
+          required: ['code']
+        }
+      },
+      {
+        name: 'generate-integration-tests',
+        description: 'Generate integration tests for API endpoints',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            endpoints: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  method: { type: 'string' },
+                  path: { type: 'string' },
+                  description: { type: 'string' }
+                },
+                required: ['method', 'path']
+              },
+              description: 'API endpoints to test'
+            },
+            framework: {
+              type: 'string',
+              enum: ['jest', 'supertest', 'chai'],
+              description: 'Testing framework',
+              default: 'jest'
+            }
+          },
+          required: ['endpoints']
+        }
+      },
+      {
+        name: 'generate-e2e-tests',
+        description: 'Generate end-to-end tests from user scenarios',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            scenarios: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  steps: {
+                    type: 'array',
+                    items: { type: 'string' }
+                  },
+                  assertions: {
+                    type: 'array',
+                    items: { type: 'string' }
+                  }
+                },
+                required: ['name', 'steps']
+              },
+              description: 'Test scenarios to implement'
+            },
+            framework: {
+              type: 'string',
+              enum: ['playwright', 'cypress', 'puppeteer'],
+              description: 'E2E testing framework',
+              default: 'playwright'
+            }
+          },
+          required: ['scenarios']
+        }
+      }
+    ]
+  }));
+
+  // Handle tool calls
+  server.setRequestHandler(CallToolRequestSchema, (request) => {
+    const { name, arguments: args } = request.params;
+
+    try {
+      switch (name) {
+        case 'generate-unit-tests': {
+          const validated = GenerateUnitTestsSchema.parse(args);
+          const result = generator.generateUnitTests(
+            validated.code,
+            validated._framework,
+            validated.coverage
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
+
+        case 'generate-integration-tests': {
+          const validated = GenerateIntegrationTestsSchema.parse(args);
+          const result = generator.generateIntegrationTests(
+            validated.endpoints,
+            validated._framework
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
+
+        case 'generate-e2e-tests': {
+          const validated = GenerateE2ETestsSchema.parse(args);
+          const result = generator.generateE2ETests(
+            validated.scenarios,
+            validated._framework
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
+
+        default:
+          throw new McpError(
+            ErrorCode.MethodNotFound,
+            `Unknown tool: ${name}`
+          );
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Invalid parameters: ${error.errors.map(e => e.message).join(', ')}`
+        );
+      }
+      if (error instanceof McpError) {
+        throw error;
+      }
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   });
+
+  // Start the server
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+
+  console.error('Test Generator MCP Server started successfully');
 }
 
 main().catch((error) => {
