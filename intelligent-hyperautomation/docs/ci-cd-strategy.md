@@ -117,9 +117,10 @@ jobs:
         with:
           cluster_name: test-cluster
       
+      # Gatekeeper v3.14.0 已驗證與 Kubernetes 1.30 相容，採用明確版本標籤以確保可重現性與審計追蹤
       - name: Install Gatekeeper
         run: |
-          kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.14/deploy/gatekeeper.yaml
+          kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.14.0/deploy/gatekeeper.yaml
           kubectl wait --for=condition=Ready pod -l control-plane=controller-manager -n gatekeeper-system --timeout=300s
       
       - name: Dry-run constraints
