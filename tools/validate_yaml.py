@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Tuple
 
 try:
-    from jsonschema import validate, ValidationError, Draft7Validator
+    from jsonschema import validate, ValidationError
     HAS_JSONSCHEMA = True
 except ImportError:
     HAS_JSONSCHEMA = False
