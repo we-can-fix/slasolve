@@ -84,7 +84,6 @@ def find_schema_for_file(file_path: Path, repo_root: Path) -> Path | None:
 def validate_test_vectors(repo_root: Path) -> Tuple[bool, List[str]]:
     """Validate test vectors against their schemas."""
     messages = []
-    all_passed = True
     
     # For now, skip test vectors validation if they have pre-existing issues
     # This prevents blocking PRs that don't touch test vectors
