@@ -39,6 +39,11 @@ tmp/
 temp/
 *.tmp
 
+# Extracted archives (do not commit)
+*-dev/
+*-master/
+*-main/
+
 # Reports
 contract-check-report.json
 sbom.json
