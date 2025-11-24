@@ -6,6 +6,7 @@ name: Policy Validation
       - 'deploy/**'
       - 'templates/**'
       - '.config/conftest/**'
+      - 'intelligent-hyperautomation/**'
 
 jobs:
   conftest-check:
@@ -41,6 +42,16 @@ jobs:
             done
           fi
 
+      - name: 🔍 Validate UAV/AD policies
+        run: |
+          if [ -d "intelligent-hyperautomation/policies/gatekeeper" ]; then
+            echo "檢查 intelligent-hyperautomation/policies/gatekeeper/ 目錄"
+            find intelligent-hyperautomation/policies/gatekeeper -name "*.yaml" -o -name "*.yml" | while read file; do
+              echo "驗證 UAV/AD 策略: $file"
+              conftest test "$file" -p intelligent-hyperautomation/policies/rego/ || true
+            done
+          fi
+
       - name: 📊 Generate report
         if: always()
         run: |
@@ -51,3 +62,4 @@ jobs:
           echo "檢查範圍：" >> $GITHUB_STEP_SUMMARY
           echo "- deploy/ 目錄" >> $GITHUB_STEP_SUMMARY
           echo "- templates/ 目錄" >> $GITHUB_STEP_SUMMARY
+          echo "- intelligent-hyperautomation/ (UAV/AD 策略)" >> $GITHUB_STEP_SUMMARY
