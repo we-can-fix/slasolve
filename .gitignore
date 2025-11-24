@@ -46,3 +46,9 @@ audit-report.json
 
 # Lock files (keep package-lock.json in root, ignore in subdirectories)
 **/node_modules/.package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
