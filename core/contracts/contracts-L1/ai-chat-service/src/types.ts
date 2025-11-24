@@ -67,7 +67,7 @@ export interface StreamOptions {
  */
 export interface LLMService {
   chat(request: ChatRequest): Promise<string>;
-  chatStream?(request: ChatRequest, options: StreamOptions): Promise<void>;
+  chatStream?(request: ChatRequest, options?: StreamOptions): Promise<string>;
 }
 
 /**

@@ -49,7 +49,7 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoints
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
     service: 'ai-chat-service',
@@ -57,7 +57,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/health/live', (req, res) => {
+app.get('/health/live', (_req, res) => {
   res.json({ alive: true });
 });
 
@@ -75,7 +75,16 @@ app.post('/api/v1/commands', (req, res) => chatController.droneCommand(req, res)
 app.get('/api/v1/model', (req, res) => chatController.modelInfo(req, res));
 app.get('/api/v1/status', (req, res) => chatController.status(req, res));
 
-// Error handling middleware
+// Start server (before error handler so routes are registered first)
+const server = app.listen(port, () => {
+  logger.info({
+    port,
+    env: process.env.NODE_ENV || 'development',
+    model: process.env.AI_MODEL || 'gpt-4-turbo-preview',
+  }, 'AI Chat Service started');
+});
+
+// Error handling middleware (must be after all routes)
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error({ err, path: req.path }, 'Unhandled error');
   
@@ -89,24 +98,21 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   next(err);
 });
 
-// Start server
-app.listen(port, () => {
-  logger.info({
-    port,
-    env: process.env.NODE_ENV || 'development',
-    model: process.env.AI_MODEL || 'gpt-4-turbo-preview',
-  }, 'AI Chat Service started');
-});
-
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
 
 export default app;

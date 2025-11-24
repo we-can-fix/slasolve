@@ -103,7 +103,7 @@ export class ChatController {
    * 獲取服務狀態
    * Get service status
    */
-  async status(req: Request, res: Response): Promise<void> {
+  async status(_req: Request, res: Response): Promise<void> {
     try {
       const aiHealthy = await this.aiService.healthCheck();
       
@@ -153,6 +153,8 @@ export class ChatController {
           },
         ],
         stream: false,
+        temperature: 0.7,
+        maxTokens: 4096,
         droneContext: {
           vehicleId,
           status: 'armed',
@@ -180,7 +182,7 @@ export class ChatController {
    * 獲取模型資訊
    * Get model information
    */
-  async modelInfo(req: Request, res: Response): Promise<void> {
+  async modelInfo(_req: Request, res: Response): Promise<void> {
     res.json({
       provider: 'openai',
       model: process.env.AI_MODEL || 'gpt-4-turbo-preview',
