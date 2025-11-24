@@ -146,11 +146,14 @@ jobs:
         if: inputs.enable-sbom && github.event_name != 'pull_request'
         run: |
           echo "🔍 生成 SBOM..."
+          # 先拉取映像（digest），確保本地可用
+          IMAGE_REF="${{ steps.meta.outputs.tags }}@${{ steps.build.outputs.digest }}"
+          docker pull "$IMAGE_REF"
           # 使用 syft 生成 SBOM
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             anchore/syft:latest \
-            ${{ steps.meta.outputs.tags }} \
+            "$IMAGE_REF" \
             -o cyclonedx-json=sbom.json || echo "⚠️ SBOM 生成失敗（非阻斷）"
           
           if [ -f "sbom.json" ]; then
