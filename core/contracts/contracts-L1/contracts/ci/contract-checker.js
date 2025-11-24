@@ -328,6 +328,57 @@ function makeRequest(url, method = 'GET', headers = {}, timeout = CONFIG.timeout
 
 // ==================== 工具函數 Utility Functions ====================
 
+/**
+ * 解析時間字串並轉換為毫秒
+ * Parse timeout string and convert to milliseconds
+ * 
+ * @param {string} timeStr - 時間字串 (e.g., "5s", "100ms", "1m", "30s")
+ * @returns {number} 毫秒數 milliseconds
+ * 
+ * @example
+ * parseTimeout("5s")    // returns 5000
+ * parseTimeout("100ms") // returns 100
+ * parseTimeout("1m")    // returns 60000
+ * parseTimeout("30s")   // returns 30000
+ */
+function parseTimeout(timeStr) {
+  // Pattern for matching time strings with optional units
+  const TIMEOUT_PATTERN = /^(\d+(?:\.\d+)?)(ms|s|m|h)?$/i;
+  
+  if (typeof timeStr === 'number') {
+    return timeStr;
+  }
+  
+  if (typeof timeStr !== 'string') {
+    return CONFIG.timeout;
+  }
+  
+  const match = timeStr.match(TIMEOUT_PATTERN);
+  
+  if (!match) {
+    console.warn(`無法解析時間格式: ${timeStr}，使用預設值 ${CONFIG.timeout}ms`);
+    return CONFIG.timeout;
+  }
+  
+  const value = parseFloat(match[1]);
+  const unit = (match[2] || 'ms').toLowerCase();
+  
+  switch (unit) {
+    case 'ms':
+      return value;
+    case 's':
+      return value * 1000;
+    case 'm':
+      return value * 60 * 1000;
+    case 'h':
+      return value * 60 * 60 * 1000;
+    default:
+      // This should never be reached due to the regex pattern
+      console.warn(`未知的時間單位: ${unit}，視為毫秒處理`);
+      return value;
+  }
+}
+
 function percentile(arr, p) {
   if (arr.length === 0) return 0;
   const index = Math.ceil((p / 100) * arr.length) - 1;
@@ -404,4 +455,5 @@ module.exports = {
   checkHealth,
   checkLatency,
   checkErrorRate,
+  parseTimeout,
 };
