@@ -88,9 +88,9 @@ spec:
     # CPU 使用率高
     - alert: ContractsServiceHighCPUUsage
       expr: |
-        rate(container_cpu_usage_seconds_total{pod=~"contracts-service-.*"}[5m]) 
-        / 
-        container_spec_cpu_quota{pod=~"contracts-service-.*"} > 0.9
+        rate(container_cpu_usage_seconds_total{pod=~"contracts-service-.*"}[5m])
+        / on(pod) group_left()
+        (container_spec_cpu_quota{pod=~"contracts-service-.*"} / container_spec_cpu_period{pod=~"contracts-service-.*"}) > 0.9
       for: 5m
       labels:
         severity: warning
