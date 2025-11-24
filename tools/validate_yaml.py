@@ -89,7 +89,7 @@ def validate_test_vectors(repo_root: Path) -> Tuple[bool, List[str]]:
     # For now, skip test vectors validation if they have pre-existing issues
     # This prevents blocking PRs that don't touch test vectors
     messages.append("ℹ️  Test vectors validation skipped (pre-existing issues)")
-    return True, messages
+    
     
     # Load vectors manifest
     manifest_path = repo_root / 'test-vectors' / 'vectors-manifest.yaml'
