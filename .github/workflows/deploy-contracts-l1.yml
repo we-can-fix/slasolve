@@ -1,0 +1,260 @@
+name: Deploy Contracts L1 Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'core/contracts/contracts-L1/contracts/**'
+  pull_request:
+    paths:
+      - 'core/contracts/contracts-L1/contracts/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  # ==================== 建置與測試 ====================
+  build-and-test:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@bfc4944b43a5d84377eca3cf6ab5b7992ba61923 # v5.0.0
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: core/contracts/contracts-L1/contracts/package-lock.json
+      
+      - name: 📦 Install Dependencies
+        working-directory: core/contracts/contracts-L1/contracts
+        run: npm ci
+      
+      - name: 🔍 Type Check
+        working-directory: core/contracts/contracts-L1/contracts
+        run: npm run typecheck
+      
+      - name: 🎨 Lint Code
+        working-directory: core/contracts/contracts-L1/contracts
+        run: npm run lint
+      
+      - name: 🧪 Run Tests
+        working-directory: core/contracts/contracts-L1/contracts
+        run: npm run test
+      
+      - name: 📦 Build Application
+        working-directory: core/contracts/contracts-L1/contracts
+        run: npm run build
+      
+      - name: 📊 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-l1-dist
+          path: core/contracts/contracts-L1/contracts/dist/
+          retention-days: 7
+
+  # ==================== SBOM 生成 ====================
+  generate-sbom:
+    name: 📋 Generate SBOM
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@bfc4944b43a5d84377eca3cf6ab5b7992ba61923 # v5.0.0
+        with:
+          node-version: '18'
+      
+      - name: 📦 Install Dependencies
+        working-directory: core/contracts/contracts-L1/contracts
+        run: npm ci
+      
+      - name: 📋 Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: core/contracts/contracts-L1/contracts
+          artifact-name: contracts-l1-sbom.spdx.json
+          output-file: contracts-l1-sbom.spdx.json
+          format: spdx-json
+      
+      - name: 📤 Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-l1-sbom
+          path: contracts-l1-sbom.spdx.json
+          retention-days: 90
+
+  # ==================== Docker 建置 ====================
+  build-docker:
+    name: 🐳 Build Docker Image
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 🔐 Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 📝 Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/contracts-l1
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: 🔨 Build and Push Docker Image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: core/contracts/contracts-L1/contracts
+          file: core/contracts/contracts-L1/contracts/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      
+      - name: 📝 Output Image Digest
+        run: echo "Image digest::" ${{ steps.build.outputs.digest }}
+
+  # ==================== 安全掃描 ====================
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: build-docker
+    
+    steps:
+      - name: 🔐 Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 🔍 Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/contracts-l1:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: 📤 Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ==================== 部署到 Staging ====================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-docker, security-scan]
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://contracts-l1-staging.slasolve.com
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      
+      - name: 🚀 Deploy to Staging
+        run: |
+          echo "🚀 Deploying Contracts L1 to Staging..."
+          echo "Image: ghcr.io/${{ github.repository }}/contracts-l1:${{ github.sha }}"
+          # 實際部署命令將根據您的基礎設施而定
+          # 例如: kubectl set image deployment/contracts-l1 contracts-l1=ghcr.io/${{ github.repository }}/contracts-l1:${{ github.sha }}
+      
+      - name: ✅ Verify Deployment
+        run: |
+          echo "✅ Verifying deployment..."
+          # 健康檢查
+          # curl -f https://contracts-l1-staging.slasolve.com/healthz || exit 1
+      
+      - name: 📊 Create Deployment Report
+        run: |
+          echo "## 🚀 Staging Deployment Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: Contracts L1" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Staging" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ghcr.io/${{ github.repository }}/contracts-l1:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+
+  # ==================== 部署到 Production ====================
+  deploy-production:
+    name: 🎯 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-docker, security-scan]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://contracts-l1.slasolve.com
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      
+      - name: 🎯 Deploy to Production
+        run: |
+          echo "🎯 Deploying Contracts L1 to Production..."
+          echo "Image: ghcr.io/${{ github.repository }}/contracts-l1:${{ github.sha }}"
+          # 實際部署命令將根據您的基礎設施而定
+      
+      - name: ✅ Verify Deployment
+        run: |
+          echo "✅ Verifying production deployment..."
+          # 健康檢查
+          # curl -f https://contracts-l1.slasolve.com/healthz || exit 1
+      
+      - name: 📊 Create Deployment Report
+        run: |
+          echo "## 🎯 Production Deployment Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: Contracts L1" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ghcr.io/${{ github.repository }}/contracts-l1:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+      
+      - name: 📢 Notify Deployment
+        run: |
+          echo "📢 Notifying stakeholders..."
+          # Slack 通知或其他通知機制
