@@ -90,6 +90,8 @@ def validate_test_vectors(repo_root: Path) -> Tuple[bool, List[str]]:
     messages.append("ℹ️  Test vectors validation skipped (pre-existing issues)")
     return True, messages
     
+    # --- Unreachable code below is currently disabled ---
+    """
     # Load vectors manifest
     manifest_path = repo_root / 'test-vectors' / 'vectors-manifest.yaml'
     if not manifest_path.exists():
@@ -160,7 +162,8 @@ def validate_test_vectors(repo_root: Path) -> Tuple[bool, List[str]]:
                 messages.append(f"❌ Error processing {vector_file.name}: {e}")
                 all_passed = False
     
-    return all_passed, messages
+        return all_passed, messages
+    """
 
 
 def main():
