@@ -48,7 +48,7 @@ jobs:
             echo "檢查 intelligent-hyperautomation/policies/gatekeeper/ 目錄"
             find intelligent-hyperautomation/policies/gatekeeper -name "*.yaml" -o -name "*.yml" | while read file; do
               echo "驗證 UAV/AD 策略: $file"
-              conftest test "$file" -p intelligent-hyperautomation/policies/rego/ || true
+              conftest test "$file" -p intelligent-hyperautomation/policies/rego/
             done
           fi
 
