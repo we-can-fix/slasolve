@@ -29,7 +29,7 @@ spec:
       # UAV/AD specific labels for Deployments
       - key: "uav.io/system"
         allowedRegex: "^(uav|ad)$"
-        matchKinds: ["Deployment", "StatefulSet", "DaemonSet"]
+        # 原本僅限 Deployment/StatefulSet/DaemonSet，建議拆分約束於 spec.match 層級過濾
       - key: "uav.io/safety-level"
         allowedRegex: "^L[0-5]$"
-        matchKinds: ["Deployment", "StatefulSet", "DaemonSet"]
+        # 原本僅限 Deployment/StatefulSet/DaemonSet，建議拆分約束於 spec.match 層級過濾
