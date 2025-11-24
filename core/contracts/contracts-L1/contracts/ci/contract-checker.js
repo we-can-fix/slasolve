@@ -186,7 +186,8 @@ async function checkHealth(contractDef) {
   }
   
   const url = `${contractDef.base_url}${healthCheck.endpoint}`;
-  const timeout = parseInt(healthCheck.timeout) * 1000 || CONFIG.timeout;
+  // Parse timeout with proper unit handling (e.g., "5s", "30s", "100ms")
+  const timeout = parseTimeout(healthCheck.timeout);
   
   try {
     const startTime = Date.now();
