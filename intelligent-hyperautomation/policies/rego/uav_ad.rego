@@ -60,7 +60,7 @@ deny[msg] {
   input.kind == "ConfigMap"
   input.data["geo.fence.enabled"] == "true"
   regions := input.data["geo.fence.regions"]
-  not regex.match("^([A-Z]{2}-[A-Za-z0-9_-]+)(,\\s*[A-Z]{2}-[A-Za-z0-9_-]+)*$", regions)
+  not regex.match(`^([A-Z]{2}-[A-Za-z0-9_-]+)(,\s*[A-Z]{2}-[A-Za-z0-9_-]+)*$`, regions)
   msg := sprintf("Invalid geo-fence regions format: '%s', expected format: 'XX-RegionName' (e.g., 'TW-Taipei, JP-Tokyo')", [regions])
 }
 
