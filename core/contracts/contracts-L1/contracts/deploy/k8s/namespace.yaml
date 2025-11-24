@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: slasolve
+  labels:
+    name: slasolve
+    environment: production
+    team: platform-governance
+  annotations:
+    description: "SLASolve platform services namespace"
