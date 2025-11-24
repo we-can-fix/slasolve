@@ -15,29 +15,7 @@ spec:
         uav.io/system: "uav"
   parameters:
     message: "UAV ConfigMap must include valid geo-fencing configuration"
-    requiredKeys:
-      - key: "geo.fence.enabled"
-        allowedValues: ["true", "false"]
-        description: "Whether geo-fencing is enabled"
-      - key: "geo.fence.regions"
-        allowedRegex: >-
-          ^([A-Z]{2}-[A-Za-z0-9_-]+)(,\\s*[A-Z]{2}-[A-Za-z0-9_-]+)*$
-        description: >-
-          Comma-separated list of geo-fence regions
-          in format 'XX-RegionName'
-        requiredWhen:
-          key: "geo.fence.enabled"
-          value: "true"
-    validations:
-      - name: "regions-format"
-        description: "Validate geo-fence regions format"
-        condition: |
-          input.data["geo.fence.enabled"] == "true" implies
-          regex.match(
-            "^([A-Z]{2}-[A-Za-z0-9_-]+)(,\\s*[A-Z]{2}-[A-Za-z0-9_-]+)*$",
-            input.data["geo.fence.regions"]
-          )
-      - name: "enabled-format"
-        description: "Validate geo.fence.enabled is boolean string"
-        condition: |
-          input.data["geo.fence.enabled"] in ["true", "false"]
+    geoFenceEnabled: true
+    geoFenceRegions:
+      - "TW-North"
+      - "JP-Tokyo"
