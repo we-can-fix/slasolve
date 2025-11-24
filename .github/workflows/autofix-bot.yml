@@ -22,7 +22,7 @@ jobs:
     
     steps:
       - name: 📥 Checkout 代碼
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         
       - name: 🤖 Auto-Fix Bot 初始化
         run: |
@@ -65,7 +65,7 @@ jobs:
     
     steps:
       - name: 📥 Checkout 代碼
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         
       - name: ☁️ 初始化雲端代理程式
         run: |
