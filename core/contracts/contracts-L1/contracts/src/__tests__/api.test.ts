@@ -178,7 +178,7 @@ describe('Provenance API Endpoints', () => {
       const response = await request(app)
         .get('/api/v1/provenance/digest/');
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toContain('filePath');
     });

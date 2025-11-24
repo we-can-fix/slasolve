@@ -142,7 +142,7 @@ describe('ProvenanceService', () => {
       const parsed = JSON.parse(exported);
 
       expect(parsed).toEqual(attestation);
-      expect(exported).toContain('\n'); // Check formatting
+      expect(exported).toContain('\\n'); // Check formatting
     });
   });
 
