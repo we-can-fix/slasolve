@@ -109,10 +109,18 @@ export class AssignmentController {
           details: error.errors
         });
       } else if (error instanceof Error) {
-        res.status(404).json({
-          success: false,
-          error: error.message
-        });
+        // Check if it's a not found error
+        if (error.message.includes('not found')) {
+          res.status(404).json({
+            success: false,
+            error: error.message
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            error: error.message
+          });
+        }
       } else {
         res.status(500).json({
           success: false,

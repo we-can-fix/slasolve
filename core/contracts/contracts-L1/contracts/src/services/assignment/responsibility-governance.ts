@@ -11,7 +11,10 @@ import {
 
 interface PerformanceMetric {
   recordedAt: Date;
-  [key: string]: unknown;
+  responseTime?: number;
+  resolutionTime?: number;
+  slaCompliant?: boolean;
+  qualityScore?: number;
 }
 
 export class ResponsibilityGovernance {

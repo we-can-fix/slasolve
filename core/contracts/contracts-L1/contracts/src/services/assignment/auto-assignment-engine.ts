@@ -58,6 +58,7 @@ export class AutoAssignmentEngine {
       if (team) {
         // 簡化：假設所有成員都可用
         // Simplified: assume all members are available
+        // TODO: Future enhancement - integrate with calendar/vacation system for real availability
         availableMembers.push(...team.members);
       }
     }
