@@ -19,7 +19,6 @@ except ImportError:
 
 try:
     from jsonschema import validate, ValidationError
-    pass
 except ImportError:
     print("⚠️  Warning: jsonschema not installed. Install with: pip install jsonschema")
     sys.exit(1)
