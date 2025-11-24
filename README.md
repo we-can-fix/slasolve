@@ -9,6 +9,7 @@ A modern platform for managing Service Level Agreements with automated code revi
 - 🔀 **Auto-Merge** - Automatic merging to main branch after successful review
 - 📊 **Quality Monitoring** - Real-time code quality metrics and reports
 - ☁️ **Cloud Delegation** - Distributed task processing with cloud agents
+- 👥 **Auto-Assignment System** - Intelligent responsibility assignment with load balancing and SLA monitoring
 
 ## 📁 Structure
 
@@ -45,5 +46,31 @@ The workflow runs automatically on:
 - PR ready for review
 
 No additional setup required! 🎉
+
+## 👥 Auto-Assignment System
+
+The Auto-Assignment System provides intelligent problem assignment and responsibility management:
+
+1. **Intelligent Assignment** - Automatically analyzes problems and assigns to the most suitable team member
+2. **Load Balancing** - Distributes work evenly across team members based on current workload
+3. **SLA Monitoring** - Tracks response and resolution times with automatic escalation
+4. **Performance Reporting** - Provides comprehensive analytics on team performance
+
+For detailed information, see:
+- [Auto-Assignment System Documentation](docs/AUTO_ASSIGNMENT_SYSTEM.md)
+- [Auto-Assignment API Documentation](docs/AUTO_ASSIGNMENT_API.md)
+
+### Quick Example
+
+```bash
+# Create an assignment
+curl -X POST http://localhost:3000/api/v1/assignment/assign \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "BACKEND_API",
+    "priority": "HIGH",
+    "description": "API endpoint error"
+  }'
+```
 
 ## 📚 Documentation
