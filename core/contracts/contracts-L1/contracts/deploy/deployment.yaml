@@ -49,7 +49,10 @@ spec:
       
       containers:
       - name: contracts-service
-        image: ghcr.io/we-can-fix/slasolve/contracts-service:latest
+        # 注意：實際部署時應使用特定版本標籤或 digest
+        # 例如：ghcr.io/we-can-fix/slasolve/contracts-service:v1.0.0
+        # 或：ghcr.io/we-can-fix/slasolve/contracts-service@sha256:...
+        image: ghcr.io/we-can-fix/slasolve/contracts-service:main-abc123
         imagePullPolicy: Always
         
         ports:

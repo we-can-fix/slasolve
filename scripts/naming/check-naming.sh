@@ -40,7 +40,8 @@ echo "[]" > "$violations_json"
 # 掃描所有 YAML 檔案
 echo -e "${GREEN}📁 掃描目錄：${MANIFEST_DIR}${NC}"
 
-find . -type f \( -name "*.yaml" -o -name "*.yml" \) -path "*/${MANIFEST_DIR}/*" | while read -r manifest; do
+# 使用 process substitution 避免 subshell 問題
+while read -r manifest; do
     total_files=$((total_files + 1))
     echo -e "\n${YELLOW}檢查：${manifest}${NC}"
     
@@ -57,7 +58,7 @@ find . -type f \( -name "*.yaml" -o -name "*.yml" \) -path "*/${MANIFEST_DIR}/*"
             cat /tmp/conftest_output.json
         fi
     fi
-done
+done < <(find . -type f \( -name "*.yaml" -o -name "*.yml" \) -path "*/${MANIFEST_DIR}/*")
 
 # 生成摘要報告
 echo -e "\n${GREEN}📊 檢查摘要${NC}"

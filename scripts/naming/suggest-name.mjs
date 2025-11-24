@@ -41,10 +41,15 @@ class NamingSuggester {
       const files = readdirSync(dir);
       for (const file of files) {
         const fullPath = join(dir, file);
-        if (statSync(fullPath).isDirectory()) {
-          this._scanDirectory(fullPath);
-        } else if (file.endsWith('.yaml') || file.endsWith('.yml')) {
-          this._extractNames(fullPath);
+        try {
+          const stats = statSync(fullPath);
+          if (stats.isDirectory()) {
+            this._scanDirectory(fullPath);
+          } else if (file.endsWith('.yaml') || file.endsWith('.yml')) {
+            this._extractNames(fullPath);
+          }
+        } catch (err) {
+          // 跳過無法存取的檔案
         }
       }
     } catch (err) {
@@ -60,7 +65,7 @@ class NamingSuggester {
         this.existingNames.add(nameMatch[1].trim());
       }
     } catch (err) {
-      console.warn(`⚠️ 無法讀取檔案：${filePath}`);
+      // 無法讀取時靜默忽略
     }
   }
 
@@ -206,7 +211,10 @@ class NamingSuggester {
 }
 
 // CLI 介面
-if (import.meta.url === `file://${process.argv[1]}`) {
+// 檢查是否為直接執行（跨平台相容）
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] === __filename) {
   const args = process.argv.slice(2);
   
   if (args.length === 0) {

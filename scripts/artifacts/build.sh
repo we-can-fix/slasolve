@@ -34,9 +34,11 @@ process_manifests() {
     echo -e "${BLUE}📦 處理 Kubernetes manifests...${NC}"
     
     local manifests="[]"
+    local count=0
     
-    find "$manifest_dir" -type f \( -name "*.yaml" -o -name "*.yml" \) 2>/dev/null | while read -r file; do
-        total_files=$((total_files + 1))
+    # 使用 process substitution 避免 subshell 問題
+    while read -r file; do
+        count=$((count + 1))
         
         # 提取資源資訊
         local kind=$(grep -m 1 "^kind:" "$file" | awk '{print $2}' || echo "Unknown")
@@ -44,8 +46,9 @@ process_manifests() {
         local namespace=$(grep -m 1 "^  namespace:" "$file" | awk '{print $2}' || echo "default")
         
         echo -e "  📄 ${file}: ${kind}/${name}"
-        processed_files=$((processed_files + 1))
-    done
+    done < <(find "$manifest_dir" -type f \( -name "*.yaml" -o -name "*.yml" \) 2>/dev/null)
+    
+    processed_files=$count
     
     # 生成清單
     cat > "$output" <<EOF

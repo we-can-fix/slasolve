@@ -44,4 +44,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: contracts-service
-  namespace: default  # 請根據實際命名空間調整
+  # 注意：實際部署時請替換為實際的命名空間名稱
+  # 建議使用專用命名空間，例如：contracts-prod
+  namespace: default

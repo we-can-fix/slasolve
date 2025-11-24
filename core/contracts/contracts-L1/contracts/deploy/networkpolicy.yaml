@@ -15,10 +15,12 @@ spec:
   
   ingress:
   # 允許來自 Ingress Controller 的流量
+  # 注意：根據實際環境調整 namespace 標籤
+  # 常見標籤：name: ingress-nginx, kubernetes.io/metadata.name: ingress-nginx
   - from:
     - namespaceSelector:
         matchLabels:
-          name: ingress-nginx  # 根據實際 ingress controller 調整
+          name: ingress-nginx
     ports:
     - protocol: TCP
       port: 3000
