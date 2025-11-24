@@ -1,0 +1,651 @@
+# ==================== Metadata ====================
+name: Islasolve Auto-Fix Bot
+id: islasolve-auto-fix-bot
+version: 2.0.0
+owner:
+  team: platform-governance
+  contacts: ["platform@islasolve.com"]
+  approvers: ["tech-lead", "security-head"]
+
+metadata:
+  created_at: "2025-01-17T12:00:00Z"
+  updated_at: "2025-01-17T12:30:00Z"
+  labels: [auto-fix, governance, policy-enforcement, deep-validation]
+  compliance_tags: [slsa-l3, in-toto, audit-trail, axiom-free]
+  project_structure: islasolve
+  architecture_pattern: "去AXIOM化重構策略"
+
+description: >
+  Islasolve專案自動修復機器人配置。整合深度可驗證模組、Policy Gate驗證、
+  多層證據生成與審計追蹤。符合碎片化YAML提升為深度可驗證模組的治理原則。
+
+# ==================== Project Structure Mapping ====================
+project_mapping:
+  config_root: ".config"
+  policies_root: ".config/conftest/policies"
+  governance_root: ".governance"
+  evidence_root: "root-evidence"
+  schemas_root: "schemas"
+  scripts_root: "scripts"
+  templates_root: "templates"
+  docs_root: "docs"
+  mcp_servers_root: "mcp-servers"
+  test_vectors_root: "test-vectors"
+
+# ==================== Bot Configuration ====================
+bot_config:
+  enabled: true
+  trigger_events: [push, pull_request, schedule, workflow_dispatch]
+  auto_merge: false
+  require_human_approval: true
+  max_fixes_per_run: 10
+  timeout: "30m"
+  
+  scopes:
+    - name: deep-yaml-validation
+      enabled: true
+      paths: 
+        - "templates/**/*.yaml"
+        - "schemas/**/*.json"
+        - ".config/**/*.yaml"
+        - ".governance/**/*.yaml"
+      
+    - name: mcp-servers-validation
+      enabled: true
+      paths:
+        - "mcp-servers/**/*.py"
+        - "mcp-servers/**/*.json"
+      
+    - name: advanced-architecture-sync
+      enabled: true
+      paths:
+        - "advanced-architecture/**/*"
+        - "advanced-system-src/**/*"
+        - "advanced-system-dist/**/*"
+      
+    - name: evidence-chain-validation
+      enabled: true
+      paths:
+        - "root-evidence/**/*.json"
+        - "attest-build-provenance-main/**/*"
+
+# ==================== Fix Rules ====================
+fix_rules:
+  # 深度YAML驗證與修復
+  - name: deep-yaml-schema-validation
+    priority: critical
+    enabled: true
+    scope: deep-yaml-validation
+    triggers:
+      - file_pattern: "templates/**/*.yaml"
+      - schema_violation: true
+      - missing_required_fields: true
+    
+    actions:
+      - name: schema-validation
+        command: |
+          python tools/validate_vectors.py ${FILE_PATH} \
+            --schema schemas/template-schema.json \
+            --output-format slsa \
+            --evidence-dir root-evidence/validation/
+        
+      - name: auto-fix-missing-metadata
+        when: "missing_fields.contains('metadata')"
+        command: |
+          python scripts/auto-fix/add_metadata.py ${FILE_PATH} \
+            --template templates/metadata-template.yaml \
+            --audit-trail root-evidence/audit/
+        
+      - name: generate-test-vectors
+        when: "missing_fields.contains('test_vectors')"
+        command: |
+          python scripts/auto-fix/generate_test_vectors.py ${FILE_PATH} \
+            --output test-vectors/${BASE_NAME}_vectors.json \
+            --validate-against schemas/
+  
+  # MCP Servers 驗證與修復
+  - name: mcp-servers-compliance
+    priority: high
+    enabled: true
+    scope: mcp-servers-validation
+    triggers:
+      - file_pattern: "mcp-servers/**/*.py"
+      - import_violations: true
+      - missing_type_hints: true
+    
+    actions:
+      - name: fix-imports
+        command: |
+          python scripts/auto-fix/fix_mcp_imports.py ${FILE_PATH} \
+            --allowed-imports config/mcp-allowed-imports.json \
+            --audit root-evidence/mcp-compliance/
+        
+      - name: add-type-hints
+        command: |
+          mypy --install-types --non-interactive ${FILE_PATH}
+          python scripts/auto-fix/add_type_hints.py ${FILE_PATH}
+  
+  # Advanced Architecture 同步
+  - name: architecture-consistency
+    priority: medium
+    enabled: true
+    scope: advanced-architecture-sync
+    triggers:
+      - file_pattern: "advanced-system-src/**/*"
+      - build_mismatch: true
+    
+    actions:
+      - name: sync-to-dist
+        command: |
+          python scripts/build/sync_architecture.py \
+            --src advanced-system-src/ \
+            --dist advanced-system-dist/ \
+            --verify-integrity \
+            --evidence root-evidence/build-sync/
+  
+  # 證據鏈完整性檢查
+  - name: evidence-chain-integrity
+    priority: critical
+    enabled: true
+    scope: evidence-chain-validation
+    triggers:
+      - file_pattern: "root-evidence/**/*.json"
+      - signature_missing: true
+      - attestation_invalid: true
+    
+    actions:
+      - name: verify-signatures
+        command: |
+          cosign verify-blob \
+            --signature ${FILE_PATH}.sig \
+            --certificate-identity-regexp ".*@islasolve\.com" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            ${FILE_PATH}
+        
+      - name: regenerate-attestation
+        when: "attestation_invalid == true"
+        command: |
+          python cross-layer-bridges/evidence-to-trust/generate_attestation.py \
+            --input ${FILE_PATH} \
+            --output ${FILE_PATH}.att \
+            --format in-toto \
+            --sign-key ${COSIGN_PRIVATE_KEY}
+
+# ==================== Policy Gates ====================
+policy_gates:
+  # 前置檢查門
+  - name: pre-validation-gate
+    stage: pre-fix
+    policies:
+      - path: .config/conftest/policies/yaml-structure.rego
+        engine: OPA
+        required: true
+        min_score: 100
+      
+      - path: .governance/security-policy.yaml
+        engine: kyverno
+        required: true
+    
+    failure_action: block
+    notification:
+      slack: "#islasolve-alerts"
+      email: ["security@islasolve.com"]
+  
+  # 修復後驗證門
+  - name: post-fix-validation-gate
+    stage: post-fix
+    policies:
+      - path: .config/conftest/policies/deep-validation.rego
+        engine: OPA
+        required: true
+        min_score: 95
+      
+      - path: schemas/complete-validation-schema.json
+        engine: jsonschema
+        required: true
+    
+    evidence_requirements:
+      - sbom_generated: true
+      - attestation_signed: true
+      - provenance_complete: true
+      - audit_trail_immutable: true
+    
+    failure_action: create_issue
+    success_action: auto_approve
+
+# ==================== Evidence Generation ====================
+evidence_generation:
+  enabled: true
+  storage_backend: "root-evidence/"
+  immutable: true
+  
+  generators:
+    - name: sbom-generator
+      trigger: "any_code_change"
+      command: |
+        syft packages ./ -o spdx-json \
+          --file root-evidence/provenance/rag-provenance/sbom/auto-fix-sbom.json
+        cosign sign-blob root-evidence/provenance/rag-provenance/sbom/auto-fix-sbom.json \
+          --output-signature root-evidence/provenance/rag-provenance/sbom/auto-fix-sbom.json.sig
+    
+    - name: attestation-generator
+      trigger: "fix_applied"
+      command: |
+        python cross-layer-bridges/evidence-to-trust/generate_attestation.py \
+          --type auto-fix \
+          --subject ${CHANGED_FILES} \
+          --predicate-type "https://islasolve.com/auto-fix/v1" \
+          --output root-evidence/attestation/auto-fix-attestation.json
+    
+    - name: provenance-generator
+      trigger: "workflow_complete"
+      command: |
+        python scripts/generate_slsa_provenance.py \
+          --workflow-run ${GITHUB_RUN_ID} \
+          --output root-evidence/provenance/auto-fix-provenance.json \
+          --format slsa-v1.0
+
+# ==================== Notification Configuration ====================
+notifications:
+  channels:
+    slack:
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#islasolve-auto-fix"
+      mention_on_failure: ["@platform-team", "@security-team"]
+    
+    email:
+      smtp_server: "${SMTP_SERVER}"
+      recipients:
+        - "platform@islasolve.com"
+        - "security@islasolve.com"
+    
+    github:
+      create_issue: true
+      assign_to: ["platform-lead"]
+      labels: ["auto-fix", "governance", "priority-high"]
+  
+  events:
+    - trigger: fix_applied
+      message: "自動修復已套用: ${FIX_SUMMARY}"
+      severity: info
+    
+    - trigger: fix_failed
+      message: "自動修復失敗: ${ERROR_MESSAGE}"
+      severity: error
+      escalate: true
+    
+    - trigger: policy_violation
+      message: "Policy Gate違規: ${POLICY_NAME}"
+      severity: critical
+      escalate: true
+      require_manual_review: true
+
+# ==================== Audit Trail ====================
+audit:
+  enabled: true
+  immutable_storage: true
+  storage_path: "root-evidence/audit/auto-fix/"
+  retention_days: 365
+  
+  tracked_events:
+    - fix_triggered
+    - fix_applied
+    - fix_failed
+    - policy_gate_checked
+    - evidence_generated
+    - notification_sent
+  
+  audit_format:
+    timestamp: "RFC3339"
+    actor: "auto-fix-bot"
+    event_type: string
+    target_files: array
+    evidence_hash: "sha256"
+    signature: "cosign"
+
+# ==================== Rollback Configuration ====================
+rollback:
+  enabled: true
+  automatic_rollback: false
+  require_approval: true
+  
+  conditions:
+    - name: test_failure_after_fix
+      enabled: true
+      rollback_action: revert_commits
+    
+    - name: policy_gate_failure
+      enabled: true
+      rollback_action: create_issue_and_block
+    
+    - name: evidence_corruption
+      enabled: true
+      rollback_action: emergency_stop
+  
+  rollback_steps:
+    - name: backup_current_state
+      command: "git stash push -m 'pre-rollback-backup-${TIMESTAMP}'"
+    
+    - name: revert_changes
+      command: "git reset --hard ${BACKUP_COMMIT}"
+    
+    - name: verify_rollback
+      command: |
+        python scripts/verify_rollback.py \
+          --target-state ${BACKUP_COMMIT} \
+          --evidence root-evidence/rollback/
+
+# ==================== Integration Commands ====================
+integration:
+  # GitHub Actions 整合
+  github_actions:
+    workflow_file: ".github/workflows/auto-fix-validation.yml"
+    trigger_on: [push, pull_request]
+    environment_vars:
+      - COSIGN_PRIVATE_KEY
+      - SLACK_WEBHOOK_URL
+      - SMTP_SERVER
+    
+    steps:
+      - name: Setup Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install cosign syft jsonschema pyyaml
+      
+      - name: Run Auto-Fix Bot
+        run: python scripts/auto_fix_bot.py --config auto-fix-bot.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  # DevContainer 整合
+  devcontainer:
+    dockerfile: ".devcontainer/Dockerfile"
+    extensions:
+      - ms-python.python
+      - ms-vscode.vscode-yaml
+      - redhat.vscode-yaml
+    
+    post_create_commands:
+      - "pip install -r requirements.txt"
+      - "pre-commit install"
+      - "python scripts/setup_auto_fix.py"
+
+# ==================== MCP Servers 特定配置 ====================
+mcp_servers_config:
+  validation_rules:
+    - name: import_restrictions
+      description: "限制MCP servers的導入模組"
+      allowed_imports:
+        - json
+        - asyncio
+        - logging
+        - pathlib
+        - typing
+        - dataclasses
+        - enum
+        - abc
+        - contextlib
+        - mcp.server
+        - mcp.types
+      forbidden_imports:
+        - os.system
+        - subprocess
+        - eval
+        - exec
+        - __import__
+    
+    - name: security_checks
+      description: "MCP servers安全性檢查"
+      checks:
+        - no_shell_execution
+        - no_file_system_write_outside_sandbox
+        - no_network_calls_without_approval
+        - input_validation_required
+    
+    - name: type_annotation_requirements
+      description: "強制型別標註要求"
+      requirements:
+        - all_functions_typed
+        - all_class_methods_typed
+        - return_types_specified
+        - parameter_types_specified
+
+# ==================== Advanced Architecture 整合 ====================
+advanced_architecture_sync:
+  source_patterns:
+    - pattern: "advanced-system-src/**/*.py"
+      destination: "advanced-system-dist/"
+      transformation: "compile_and_optimize"
+      validation: "run_unit_tests"
+    
+    - pattern: "advanced-system-src/**/*.yaml"
+      destination: "advanced-system-dist/"
+      transformation: "validate_and_minify"
+      validation: "schema_check"
+    
+    - pattern: "advanced-system-src/**/*.json"
+      destination: "advanced-system-dist/"
+      transformation: "validate_and_compress"
+      validation: "json_schema_validate"
+  
+  sync_commands:
+    - name: pre_sync_validation
+      command: |
+        python scripts/validate_architecture_integrity.py \
+          --src advanced-system-src/ \
+          --checks all \
+          --output root-evidence/architecture/pre-sync-validation.json
+    
+    - name: sync_with_transformation
+      command: |
+        python scripts/build/sync_architecture.py \
+          --src advanced-system-src/ \
+          --dist advanced-system-dist/ \
+          --apply-transformations \
+          --verify-integrity \
+          --evidence root-evidence/build-sync/
+    
+    - name: post_sync_verification
+      command: |
+        python scripts/verify_sync_completeness.py \
+          --src advanced-system-src/ \
+          --dist advanced-system-dist/ \
+          --evidence root-evidence/architecture/post-sync-verification.json
+
+# ==================== Cross-Layer Bridges 整合 ====================
+cross_layer_bridges:
+  evidence_to_trust:
+    enabled: true
+    attestation_format: "in-toto"
+    signing_key_type: "cosign"
+    trust_root: "root-evidence/trust-anchors/"
+    
+    generators:
+      - name: build_attestation
+        trigger: "build_complete"
+        predicate_type: "https://slsa.dev/provenance/v1"
+        command: |
+          python cross-layer-bridges/evidence-to-trust/generate_attestation.py \
+            --type build \
+            --builder ${GITHUB_WORKFLOW} \
+            --source ${GITHUB_REPOSITORY} \
+            --commit ${GITHUB_SHA} \
+            --output root-evidence/attestation/build-attestation.json
+      
+      - name: deployment_attestation
+        trigger: "deployment_complete"  
+        predicate_type: "https://islasolve.com/deployment/v1"
+        command: |
+          python cross-layer-bridges/evidence-to-trust/generate_attestation.py \
+            --type deployment \
+            --environment ${DEPLOY_ENVIRONMENT} \
+            --artifacts ${DEPLOYED_ARTIFACTS} \
+            --output root-evidence/attestation/deployment-attestation.json
+
+# ==================== Deep Validation Schema ====================
+deep_validation_schema:
+  yaml_structure_requirements:
+    mandatory_sections:
+      - metadata
+      - version
+      - owner
+      - audit
+    
+    metadata_requirements:
+      required_fields:
+        - created_at
+        - updated_at
+        - labels
+        - compliance_tags
+      timestamp_format: "RFC3339"
+      labels_min_count: 2
+      compliance_tags_allowed:
+        - slsa-l3
+        - in-toto
+        - audit-trail
+        - axiom-free
+        - deep-validation
+    
+    versioning_requirements:
+      format: "semantic"
+      pattern: "^\\d+\\.\\d+\\.\\d+$"
+      changelog_required: true
+    
+    owner_requirements:
+      required_fields:
+        - team
+        - contacts
+      contact_format: "email"
+      team_allowed_values:
+        - platform-governance
+        - security-team
+        - development-team
+
+# ==================== Evidence Chain Validation ====================
+evidence_chain_validation:
+  signature_requirements:
+    algorithm: "ES256"
+    key_type: "ECDSA P-256"
+    certificate_chain: true
+    timestamp_required: true
+  
+  attestation_requirements:
+    format: "in-toto"
+    statement_type: "https://in-toto.io/Statement/v0.1"
+    predicate_required: true
+    subject_digest: "sha256"
+  
+  provenance_requirements:
+    format: "SLSA v1.0"
+    builder_id_required: true
+    build_type_required: true
+    invocation_required: true
+    materials_complete: true
+  
+  validation_chain:
+    - step: verify_signatures
+      command: |
+        find root-evidence/ -name "*.json" -exec \
+          cosign verify-blob --signature {}.sig \
+          --certificate-identity-regexp ".*@islasolve\.com" {} \;
+    
+    - step: validate_attestations
+      command: |
+        python scripts/validate_attestations.py \
+          --evidence-dir root-evidence/ \
+          --schema schemas/attestation-schema.json \
+          --output root-evidence/validation/attestation-validation.json
+    
+    - step: verify_provenance_chain
+      command: |
+        python scripts/verify_provenance_chain.py \
+          --provenance-dir root-evidence/provenance/ \
+          --trust-root root-evidence/trust-anchors/ \
+          --output root-evidence/validation/provenance-validation.json
+
+# ==================== Error Recovery Procedures ====================
+error_recovery:
+  procedures:
+    - name: schema_validation_failure
+      description: "Schema驗證失敗時的復原程序"
+      steps:
+        - backup_current_file
+        - restore_from_template
+        - merge_existing_data
+        - re_validate
+        - notify_team
+      
+    - name: evidence_corruption_detected
+      description: "證據完整性受損時的應急程序"
+      steps:
+        - isolate_corrupted_evidence
+        - restore_from_backup
+        - re_generate_signatures
+        - audit_corruption_cause
+        - escalate_to_security_team
+      
+    - name: policy_gate_permanent_failure
+      description: "Policy Gate持續失敗的處理程序"
+      steps:
+        - create_emergency_issue
+        - disable_auto_merge
+        - require_manual_review
+        - escalate_to_governance_team
+        - document_exception_request
+
+# ==================== Monitoring & Observability ====================
+monitoring:
+  metrics:
+    - name: fix_success_rate
+      type: percentage
+      query: "successful_fixes / total_fix_attempts * 100"
+      threshold: 95
+      alert_on_below: true
+    
+    - name: average_fix_time
+      type: duration
+      query: "avg(fix_completion_time - fix_start_time)"
+      threshold: "5m"
+      alert_on_above: true
+    
+    - name: policy_gate_failure_rate
+      type: percentage
+      query: "failed_policy_checks / total_policy_checks * 100"
+      threshold: 5
+      alert_on_above: true
+  
+  dashboards:
+    - name: auto_fix_overview
+      panels:
+        - fix_attempts_over_time
+        - success_rate_by_rule_type
+        - average_resolution_time
+        - policy_gate_status
+        - evidence_generation_status
+    
+    - name: security_compliance
+      panels:
+        - signature_verification_status
+        - attestation_coverage
+        - audit_trail_completeness
+        - vulnerability_detection_rate
+
+# ==================== Changelog ====================
+changelog:
+  - ts: "2025-01-17T12:00:00Z"
+    by: "platform-governance"
+    version: "1.0.0"
+    change: "初始Auto-Fix Bot配置，支援基本YAML驗證與修復"
+  - ts: "2025-01-17T12:15:00Z"
+    by: "security-team"
+    version: "1.5.0"
+    change: "新增Policy Gate整合與證據鏈生成"
+  - ts: "2025-01-17T12:30:00Z"
+    by: "platform-governance"
+    version: "2.0.0"
+    change: "完整整合深度可驗證模組、去標籤化架構策略與Islasolve專案架構適配"
