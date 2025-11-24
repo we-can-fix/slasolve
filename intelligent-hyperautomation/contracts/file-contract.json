@@ -16,9 +16,9 @@
   ],
   "hashes": {
     "algorithm": "BLAKE3 + SHA3-512",
-    "note": "Hashes must be calculated in CI pipeline",
-    "blake3_placeholder": "UNAVAILABLE_NO_RUNTIME",
-    "sha3_512_placeholder": "UNAVAILABLE_NO_RUNTIME",
+    "note": "Hashes must be calculated in CI pipeline before use",
+    "blake3_placeholder": null,
+    "sha3_512_placeholder": null,
     "calculation_command": {
       "blake3": "b3sum <file>",
       "sha3_512": "openssl dgst -sha3-512 <file>"
