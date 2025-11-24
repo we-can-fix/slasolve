@@ -6,7 +6,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { createHash } from 'crypto';
+
 
 // 命名規範
 const NAMING_PATTERNS = {
