@@ -75,7 +75,7 @@ deny[msg] {
 deny[msg] {
   input.kind == "Deployment"
   container := input.spec.template.spec.containers[_]
-  not container.securityContext.allowPrivilegeEscalation == false
+  container.securityContext.allowPrivilegeEscalation != false
   msg := sprintf("容器 '%s' 必須設定 allowPrivilegeEscalation: false", [container.name])
 }
 
