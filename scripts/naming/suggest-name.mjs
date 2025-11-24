@@ -15,11 +15,7 @@ const NAMING_PATTERNS = {
   service: /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/,
 };
 
-const REQUIRED_LABELS = [
-  'namespace.io/team',
-  'namespace.io/environment',
-  'namespace.io/lifecycle',
-];
+
 
 class NamingSuggester {
   constructor() {
