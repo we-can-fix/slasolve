@@ -291,7 +291,7 @@ jobs:
           # 應用 manifests
           kubectl apply -f rbac.yaml || echo "⚠️ RBAC 應用失敗"
           kubectl apply -f service.yaml
-          kubectl apply -f deployment.yaml
+          envsubst < deployment.yaml | kubectl apply -f -
           kubectl apply -f hpa.yaml || echo "⚠️ HPA 應用失敗"
           kubectl apply -f pdb.yaml || echo "⚠️ PDB 應用失敗"
           kubectl apply -f networkpolicy.yaml || echo "⚠️ NetworkPolicy 應用失敗"
