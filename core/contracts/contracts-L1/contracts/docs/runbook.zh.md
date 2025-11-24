@@ -308,7 +308,7 @@ container_memory_usage_bytes{pod=~"contracts-service-.*"}
 
 - [架構文件](./architecture.zh.md)
 - [API 文件](../README.md)
-- [部署指南](./deployment-guide.zh.md)
+- [部署指南](../../../../docs/production-deployment-guide.zh.md)
 - [SBOM](../sbom/README.md)
 
 ## 變更歷史
