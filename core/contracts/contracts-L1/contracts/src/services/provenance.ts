@@ -97,14 +97,9 @@ export class ProvenanceService {
       content
     );
 
-    // Generate attestation ID in expected format: att_timestamp_randomstring
-    const timestamp = Date.now();
-    const randomPart = randomUUID().substring(0, 8);
-    const attestationId = metadata.buildInvocationId || `att_${timestamp}_${randomPart}`;
-
     const buildMetadata: BuildMetadata = {
-      buildType: 'https://github.com/slasolve/build',
-      invocationId: attestationId,
+      buildType: 'https://slasolve.dev/contracts/build/v1',
+      invocationId: randomUUID(),
       startedOn: metadata.buildStartedOn || new Date().toISOString(),
       finishedOn: metadata.buildFinishedOn || new Date().toISOString(),
       builder: {
