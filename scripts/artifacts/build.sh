@@ -76,10 +76,10 @@ process_sbom() {
     fi
     
     local sbom_count=0
-    find "$sbom_dir" -type f -name "*.json" 2>/dev/null | while read -r file; do
+    while read -r file; do
         sbom_count=$((sbom_count + 1))
         echo -e "  📄 ${file}"
-    done
+    done < <(find "$sbom_dir" -type f -name "*.json" 2>/dev/null)
     
     cat > "$output" <<EOF
 {
