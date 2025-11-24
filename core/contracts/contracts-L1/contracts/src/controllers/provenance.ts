@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { ProvenanceService } from '../services/provenance';
-import { createError } from '../middleware/error';
 
 export class ProvenanceController {
   private provenanceService: ProvenanceService;
@@ -14,14 +13,28 @@ export class ProvenanceController {
    */
   createAttestation = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { subjectPath, builder, metadata } = req.body;
+      const { filePath, builder, metadata } = req.body;
 
-      if (!subjectPath || !builder) {
-        throw createError.validation('Subject path and builder information are required');
+      if (!filePath) {
+        res.status(400).json({
+          success: false,
+          error: 'filePath is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (!builder) {
+        res.status(400).json({
+          success: false,
+          error: 'builder is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
       const attestation = await this.provenanceService.createBuildAttestation(
-        subjectPath,
+        filePath,
         builder,
         metadata
       );
@@ -35,10 +48,19 @@ export class ProvenanceController {
         message: 'Build attestation created successfully'
       });
     } catch (error) {
-      if (error instanceof Error) {
-        throw createError.internal(error.message);
+      if (error instanceof Error && error.message.includes('ENOENT')) {
+        res.status(404).json({
+          success: false,
+          error: 'File not found',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to create attestation',
+          timestamp: new Date().toISOString()
+        });
       }
-      throw createError.internal('Failed to create attestation');
     }
   };
 
@@ -50,7 +72,12 @@ export class ProvenanceController {
       const { attestation } = req.body;
 
       if (!attestation) {
-        throw createError.validation('Attestation data is required');
+        res.status(400).json({
+          success: false,
+          error: 'Attestation data is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
       const isValid = await this.provenanceService.verifyAttestation(attestation);
@@ -65,10 +92,11 @@ export class ProvenanceController {
         message: isValid ? 'Attestation is valid' : 'Attestation is invalid'
       });
     } catch (error) {
-      if (error instanceof Error) {
-        throw createError.internal(error.message);
-      }
-      throw createError.internal('Failed to verify attestation');
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify attestation',
+        timestamp: new Date().toISOString()
+      });
     }
   };
 
@@ -77,28 +105,44 @@ export class ProvenanceController {
    */
   getFileDigest = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { filePath } = req.params;
+      const filePath = req.params.filePath || req.params[0]; // 支援通配符路由
 
       if (!filePath) {
-        throw createError.validation('File path is required');
+        res.status(400).json({
+          success: false,
+          error: 'File path is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
-      const digest = await this.provenanceService.generateFileDigest(filePath);
+      // 解碼URL編碼的路徑
+      const decodedPath = decodeURIComponent(filePath);
+      const digest = await this.provenanceService.generateFileDigest(decodedPath);
 
       res.json({
         success: true,
         data: {
-          filePath,
+          filePath: decodedPath,
           digest,
           timestamp: new Date().toISOString()
         },
         message: 'File digest generated successfully'
       });
     } catch (error) {
-      if (error instanceof Error) {
-        throw createError.internal(error.message);
+      if (error instanceof Error && error.message.includes('ENOENT')) {
+        res.status(404).json({
+          success: false,
+          error: 'File not found',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to generate file digest',
+          timestamp: new Date().toISOString()
+        });
       }
-      throw createError.internal('Failed to generate file digest');
     }
   };
 
@@ -107,13 +151,18 @@ export class ProvenanceController {
    */
   importAttestation = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { jsonData } = req.body;
+      const { attestationJson } = req.body;
 
-      if (!jsonData) {
-        throw createError.validation('JSON data is required');
+      if (!attestationJson) {
+        res.status(400).json({
+          success: false,
+          error: 'Attestation JSON data is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
-      const attestation = this.provenanceService.importAttestation(jsonData);
+      const attestation = this.provenanceService.importAttestation(attestationJson);
       const isValid = await this.provenanceService.verifyAttestation(attestation);
 
       res.json({
@@ -126,10 +175,37 @@ export class ProvenanceController {
         message: 'Attestation imported successfully'
       });
     } catch (error) {
-      if (error instanceof Error) {
-        throw createError.validation(error.message);
-      }
-      throw createError.validation('Invalid JSON data or attestation format');
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid JSON data or attestation format',
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+
+  /**
+   * 導出認證
+   */
+  exportAttestation = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      
+      // 這裡應該從數據庫獲取認證，現在返回格式化消息
+      res.json({
+        success: true,
+        data: {
+          message: `Attestation export for ID: ${id}`,
+          format: 'json',
+          timestamp: new Date().toISOString()
+        },
+        message: 'Attestation export endpoint'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to export attestation',
+        timestamp: new Date().toISOString()
+      });
     }
   };
 }
