@@ -342,6 +342,9 @@ function makeRequest(url, method = 'GET', headers = {}, timeout = CONFIG.timeout
  * parseTimeout("30s")   // returns 30000
  */
 function parseTimeout(timeStr) {
+  // Pattern for matching time strings with optional units
+  const TIMEOUT_PATTERN = /^(\d+(?:\.\d+)?)(ms|s|m|h)?$/i;
+  
   if (typeof timeStr === 'number') {
     return timeStr;
   }
@@ -350,7 +353,7 @@ function parseTimeout(timeStr) {
     return CONFIG.timeout;
   }
   
-  const match = timeStr.match(/^(\d+(?:\.\d+)?)(ms|s|m|h)?$/i);
+  const match = timeStr.match(TIMEOUT_PATTERN);
   
   if (!match) {
     console.warn(`無法解析時間格式: ${timeStr}，使用預設值 ${CONFIG.timeout}ms`);
@@ -370,6 +373,8 @@ function parseTimeout(timeStr) {
     case 'h':
       return value * 60 * 60 * 1000;
     default:
+      // This should never be reached due to the regex pattern
+      console.warn(`未知的時間單位: ${unit}，視為毫秒處理`);
       return value;
   }
 }
