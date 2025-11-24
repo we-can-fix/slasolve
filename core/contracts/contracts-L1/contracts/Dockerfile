@@ -34,9 +34,7 @@ COPY --chown=nodejs:nodejs src ./src
 # 構建 TypeScript
 RUN npm run build
 
-# 切換回 root 進行清理
-USER root
-
+# 直接以 nodejs 使用者執行清理，符合最小權限原則
 # 移除 devDependencies
 RUN npm prune --production
 
