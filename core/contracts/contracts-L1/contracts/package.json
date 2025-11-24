@@ -39,7 +39,7 @@
     "@sigstore/sign": "^2.2.0",
     "@sigstore/verify": "^1.0.0",
     "crypto": "^1.0.1",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
