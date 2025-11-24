@@ -271,7 +271,7 @@ async function checkErrorRate(contractDef) {
     }
   }
   
-  const rate = (errorCount / sampleCount) * 100;
+  const rate = (errorCount / Math.min(sampleCount, 10)) * 100;
   
   return {
     rate: parseFloat(rate.toFixed(2)),
