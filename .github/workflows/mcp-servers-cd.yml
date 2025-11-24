@@ -1,0 +1,43 @@
+---
+name: MCP Servers CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'mcp-servers/**'
+      - '.github/workflows/mcp-servers-cd.yml'
+      - '.github/workflows/project-cd.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '部署環境'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: 'dev'
+
+jobs:
+  cd:
+    uses: ./.github/workflows/project-cd.yml
+    with:
+      working-directory: mcp-servers
+      service-name: mcp-servers
+      image-name: slasolve/mcp-servers
+      registry: ghcr.io
+      environment: ${{ inputs.environment || 'dev' }}
+      enable-cosign: true
+      enable-sbom: true
+      enable-policy-check: true
+      deploy-to-k8s: false  # 設為 true 以啟用自動部署
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.GHCR_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      KUBECONFIG: ${{ secrets.KUBECONFIG }}
