@@ -172,13 +172,11 @@ jobs:
         run: |
           if [ -n "${{ secrets.COSIGN_PRIVATE_KEY }}" ]; then
             echo "🔐 使用私鑰簽章..."
-            echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
-            cosign sign --key cosign.key \
+            echo "${{ secrets.COSIGN_PRIVATE_KEY }}" | cosign sign --key /dev/stdin \
               -a "repo=${{ github.repository }}" \
               -a "workflow=${{ github.workflow }}" \
               -a "ref=${{ github.ref }}" \
               ${{ steps.meta.outputs.tags }}@${{ steps.build.outputs.digest }}
-            rm -f cosign.key
           else
             echo "🔓 使用 keyless 簽章..."
             cosign sign \
