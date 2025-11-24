@@ -353,7 +353,7 @@ async function main() {
 }
 
 // Run if executed directly
-if (resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1])) {
+
   main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
