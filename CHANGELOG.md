@@ -38,12 +38,14 @@ YYYY-MM-DD | <username> | <path> | <change_type> | <reason>
 
 ### 2025-11
 
-#### 2025-11-24
+#### [To be filled when PR is merged]
 
 ```
-2025-11-24 | copilot | ROOT_README.md | add | Create monitoring system reference documentation (#61)
-2025-11-24 | copilot | CHANGELOG.md | add | Create standardized change log format (#61)
-2025-11-24 | copilot | MONITORING_GUIDE.md | add | Create detailed monitoring setup guide with worker prompts (#61)
+# 當此 PR 合併時，請填入實際的變更記錄
+# When this PR is merged, please fill in the actual change records:
+# YYYY-MM-DD | <username> | ROOT_README.md | add | Create monitoring system reference documentation (#61)
+# YYYY-MM-DD | <username> | CHANGELOG.md | add | Create standardized change log format (#61)
+# YYYY-MM-DD | <username> | MONITORING_GUIDE.md | add | Create detailed monitoring setup guide with worker prompts (#61)
 ```
 
 **說明**: 建立監控系統參照文件，提供工作人員、代理與智能體明確的操作指引與監控目錄清單。
@@ -213,5 +215,5 @@ It is recommended to develop the following automation tools:
 ---
 
 **維護者 | Maintainer**: SLASolve Team  
-**最後更新 | Last Updated**: 2025-11-24  
+**最後更新 | Last Updated**: [Document Creation Date]  
 **格式版本 | Format Version**: 1.0

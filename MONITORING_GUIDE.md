@@ -183,8 +183,20 @@ auditd is a kernel-level Linux audit tool that records all file access and syste
    # 監控 schemas
    sudo auditctl -w /srv/repo/schemas -p wa -k reposchema_watch
 
-3. 將規則寫入設定檔以便重啟後保留：
-   sudo sh -c 'auditctl -l >> /etc/audit/rules.d/slasolve-monitoring.rules'
+3. 將規則永久保存到設定檔（以便重啟後保留）：
+   # 方法 1：手動寫入規則檔案
+   sudo tee /etc/audit/rules.d/slasolve-monitoring.rules << 'EOF'
+   -w /srv/repo/config -p wa -k repoconfig_watch
+   -w /srv/repo/scripts -p wa -k reposcripts_watch
+   -w /srv/repo/core/contracts -p wa -k repocore_watch
+   -w /srv/repo/advanced-system-src -p wa -k reposrc_watch
+   -w /srv/repo/mcp-servers -p wa -k repomcp_watch
+   -w /srv/repo/.config/conftest/policies -p wa -k repopolicy_watch
+   -w /srv/repo/schemas -p wa -k reposchema_watch
+   EOF
+   
+   # 方法 2：備份當前規則到檔案
+   sudo sh -c 'auditctl -l > /etc/audit/rules.d/slasolve-monitoring-backup.txt'
 
 4. 重啟 auditd：
    sudo service auditd restart
@@ -417,7 +429,7 @@ index=linux_audit key=repo*_watch
 
 # 查詢非白名單帳號的變更
 index=linux_audit key=repo*_watch
-| search NOT [| inputlookup whitelist_accounts.csv]
+| search NOT [| inputlookup whitelist_accounts.csv | fields user | format]
 
 # 統計每個目錄的變更次數
 index=linux_audit key=repo*_watch
@@ -660,7 +672,7 @@ All worker reports should follow this unified format:
 
 ### 版本歷史 | Version History
 
-- **v1.0** (2025-11-24): 初始版本，包含 FIM、auditd、inotify、SIEM 整合指引
+- **v1.0** (Initial Release): 初始版本，包含 FIM、auditd、inotify、SIEM 整合指引
 
 ### 預計更新 | Planned Updates
 
@@ -672,5 +684,5 @@ All worker reports should follow this unified format:
 ---
 
 **維護者 | Maintainer**: SLASolve Team  
-**最後更新 | Last Updated**: 2025-11-24  
+**最後更新 | Last Updated**: [Document Creation Date]  
 **版本 | Version**: 1.0

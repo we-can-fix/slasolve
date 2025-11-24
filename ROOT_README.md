@@ -231,9 +231,9 @@ YYYY-MM-DD | <username> | <path> | <change_type> | <reason>
 
 ## 🔄 文件更新歷史 | Document Update History
 
-- **2025-11-24**: 初始版本建立 (Initial version created)
+- **[Document Creation Date]**: 初始版本建立 (Initial version created)
 
 ---
 
 **維護者 | Maintainer**: SLASolve Team  
-**最後更新 | Last Updated**: 2025-11-24
+**最後更新 | Last Updated**: [Document Creation Date]
