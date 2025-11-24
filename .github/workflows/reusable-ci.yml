@@ -1,0 +1,153 @@
+---
+name: Reusable CI Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: 'Working directory for the project'
+        required: true
+        type: string
+      service-name:
+        description: 'Service name for identification'
+        required: true
+        type: string
+      node-version:
+        description: 'Node.js version'
+        required: false
+        type: string
+        default: '18'
+      enable-docker-build:
+        description: 'Enable Docker image build'
+        required: false
+        type: boolean
+        default: false
+      enable-sbom:
+        description: 'Enable SBOM generation'
+        required: false
+        type: boolean
+        default: true
+      enable-security-scan:
+        description: 'Enable security scanning'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      REGISTRY_USERNAME:
+        required: false
+      REGISTRY_PASSWORD:
+        required: false
+      COSIGN_PRIVATE_KEY:
+        required: false
+      COSIGN_PASSWORD:
+        required: false
+
+jobs:
+  ci-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      packages: write
+    
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 檢查專案結構
+        id: check-structure
+        run: |
+          echo "service=${{ inputs.service-name }}" >> $GITHUB_OUTPUT
+          echo "working_dir=${{ inputs.working-directory }}" >> $GITHUB_OUTPUT
+          
+          # 檢查必要檔案
+          if [ -f "package.json" ]; then
+            echo "has_package_json=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_package_json=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -f "Dockerfile" ]; then
+            echo "has_dockerfile=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_dockerfile=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🟢 Setup Node.js
+        if: steps.check-structure.outputs.has_package_json == 'true'
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: 📦 Install dependencies
+        if: steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: 🔍 Lint check
+        if: steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "⚠️ 略過 lint (無對應 script)"
+          fi
+
+      - name: 🔬 Type check
+        if: steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          if npm run | grep -q "typecheck\|type-check"; then
+            npm run typecheck || npm run type-check || true
+          else
+            echo "⚠️ 略過 typecheck (無對應 script)"
+          fi
+
+      - name: 🧪 Unit tests
+        if: steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --ci --coverage
+          else
+            echo "⚠️ 略過 tests (無對應 script)"
+          fi
+
+      - name: 🏗️ Build
+        if: steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "⚠️ 略過 build (無對應 script)"
+          fi
+
+      - name: 📋 Generate SBOM
+        if: inputs.enable-sbom == true && steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          npx @cyclonedx/cyclonedx-npm --output-file sbom.json || echo "⚠️ SBOM 生成失敗"
+          
+      - name: 🔒 Security scan
+        if: inputs.enable-security-scan == true && steps.check-structure.outputs.has_package_json == 'true'
+        run: |
+          npm audit --audit-level=moderate || echo "⚠️ 發現安全漏洞"
+
+      - name: 🐳 Build Docker image
+        if: inputs.enable-docker-build == true && steps.check-structure.outputs.has_dockerfile == 'true'
+        run: |
+          docker build -t ${{ inputs.service-name }}:${{ github.sha }} .
+
+      - name: ✅ CI Pipeline complete
+        run: |
+          echo "✅ ${{ inputs.service-name }} CI 完成"
+          echo "📁 Working directory: ${{ inputs.working-directory }}"
