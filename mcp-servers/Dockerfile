@@ -19,11 +19,19 @@ WORKDIR /app
 # 複製套件定義檔
 COPY --chown=nodejs:nodejs package*.json ./
 
+# 建立 nodejs 使用者的家目錄並設定權限
+RUN chown -R nodejs:nodejs /app && \
+    mkdir -p /home/nodejs/.npm && \
+    chown -R nodejs:nodejs /home/nodejs
+
 # 切換到非 root 使用者
 USER nodejs
 
+# 設定 npm 快取目錄環境變數
+ENV NPM_CONFIG_CACHE=/home/nodejs/.npm
+
 # 安裝依賴
-RUN npm ci && \
+RUN npm install && \
     npm cache clean --force
 
 # 複製原始碼
