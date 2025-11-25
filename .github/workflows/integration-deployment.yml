@@ -335,47 +335,39 @@ jobs:
         run: |
           echo "🧪 測試 Docker 映像..."
           
+          # 健康檢查重試函數
+          health_check() {
+            local service_name=$1
+            local url=$2
+            local container_name=$3
+            for i in {1..30}; do
+              if curl -sf "$url" > /dev/null; then
+                echo "✅ $service_name 健康檢查通過"
+                return 0
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ $service_name 啟動超時"
+                docker logs "$container_name"
+                exit 1
+              fi
+              echo "等待 $service_name 啟動... ($i/30)"
+              sleep 2
+            done
+          }
+          
           # 列出建置的映像
           docker images | grep slasolve
           
           # 測試 Contracts L1 映像
           echo "Testing Contracts L1..."
           docker run --rm -d --name test-contracts-l1 -p 3000:3000 slasolve/contracts-l1:test
-          
-          # 等待服務啟動（使用重試機制）
-          for i in {1..30}; do
-            if curl -sf http://localhost:3000/healthz > /dev/null; then
-              echo "✅ Contracts L1 健康檢查通過"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Contracts L1 啟動超時"
-              docker logs test-contracts-l1
-              exit 1
-            fi
-            echo "等待 Contracts L1 啟動... ($i/30)"
-            sleep 2
-          done
+          health_check "Contracts L1" "http://localhost:3000/healthz" "test-contracts-l1"
           docker stop test-contracts-l1
           
           # 測試 MCP Servers 映像
           echo "Testing MCP Servers..."
           docker run --rm -d --name test-mcp-servers -p 3001:3001 slasolve/mcp-servers:test
-          
-          # 等待服務啟動（使用重試機制）
-          for i in {1..30}; do
-            if curl -sf http://localhost:3001/health > /dev/null; then
-              echo "✅ MCP Servers 健康檢查通過"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ MCP Servers 啟動超時"
-              docker logs test-mcp-servers
-              exit 1
-            fi
-            echo "等待 MCP Servers 啟動... ($i/30)"
-            sleep 2
-          done
+          health_check "MCP Servers" "http://localhost:3001/health" "test-mcp-servers"
           docker stop test-mcp-servers
           
           echo "✅ 所有 Docker 映像測試通過"
