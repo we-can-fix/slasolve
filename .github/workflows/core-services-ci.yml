@@ -65,7 +65,7 @@ jobs:
       
       - name: 📊 Upload coverage
         if: always()
-        uses: actions/upload-artifact@a1bc2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u # v4.3.1
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: contracts-l1-coverage
           path: core/contracts/contracts-L1/contracts/coverage/
@@ -146,10 +146,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       
       - name: 🔧 Set up Docker Buildx
-        uses: docker/setup-buildx-action@c8b6e5e6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2 # v3.3.0
+        uses: docker/setup-buildx-action@v3.3.0
       
       - name: 🏗️ Build Docker image (${{ matrix.service.name }})
-        uses: docker/build-push-action@e7b6e5e6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2 # v6.1.0
+        uses: docker/build-push-action@v6.1.0
         with:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
