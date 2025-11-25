@@ -60,7 +60,7 @@ export interface BuildMetadata {
     id: string;
     version?: Record<string, string>;
   };
-  externalParameters?: Record<string, any>;
+  externalParameters?: Record<string, unknown>;
   dependencies?: Array<{
     uri: string;
     digest?: Record<string, string>;

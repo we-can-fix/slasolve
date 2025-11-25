@@ -135,18 +135,9 @@ class LogicValidator {
   }
 
   /**
-   * Validate code logic
+   * Check for unreachable code
    */
-  _validateLogic(code) {
-    const result = {
-      valid: true,
-      checks: [],
-      warnings: []
-    };
-
-    // Check for logical inconsistencies
-    
-    // 1. Unreachable code
+  _checkUnreachableCode(code, warnings) {
     const unreachablePatterns = [
       /return\s+[^;]+;[\s\S]*?(?=\})/g
     ];
@@ -158,22 +149,19 @@ class LogicValidator {
           const afterReturn = match.split('return')[1];
           if (afterReturn && afterReturn.includes('\n') && 
               /[a-z]/i.test(afterReturn.split('\n').slice(1).join('\n'))) {
-            result.warnings.push({
+            warnings.push({
               message: 'Potential unreachable code after return statement'
             });
           }
         }
       }
     }
+  }
 
-    // 2. Empty catch blocks
-    if (/catch\s*\([^)]*\)\s*\{\s*\}/.test(code)) {
-      result.warnings.push({
-        message: 'Empty catch block found - errors may be silently ignored'
-      });
-    }
-
-    // 3. Infinite loops
+  /**
+   * Check for infinite loops
+   */
+  _checkInfiniteLoops(code, result) {
     const infiniteLoopPatterns = [
       /while\s*\(\s*true\s*\)\s*\{[^}]*\}/g,
       /for\s*\(\s*;\s*;\s*\)\s*\{[^}]*\}/g
@@ -194,28 +182,12 @@ class LogicValidator {
         }
       }
     }
+  }
 
-    // 4. Equality comparisons
-    if (/==(?!=)/.test(code) || /!=(?!=)/.test(code)) {
-      result.warnings.push({
-        message: 'Loose equality (==, !=) used - consider strict equality (===, !==)'
-      });
-    }
-
-    // 5. Unhandled promises
-    const promisePattern = /new\s+Promise\s*\([^)]*\)|\.then\s*\([^)]*\)/g;
-    const catchPattern = /\.catch\s*\([^)]*\)/g;
-    
-    const promiseCount = (code.match(promisePattern) || []).length;
-    const catchCount = (code.match(catchPattern) || []).length;
-    
-    if (promiseCount > catchCount * 2) {
-      result.warnings.push({
-        message: 'Some promises may lack error handling'
-      });
-    }
-
-    // 6. Variable shadowing
+  /**
+   * Check for variable shadowing
+   */
+  _checkVariableShadowing(code, warnings) {
     const functionScopes = code.match(/function\s+\w+\s*\([^)]*\)\s*\{/g) || [];
     if (functionScopes.length > 0) {
       const varNames = new Set();
@@ -231,11 +203,55 @@ class LogicValidator {
       }
       
       if (shadowedVars.length > 0) {
-        result.warnings.push({
+        warnings.push({
           message: `Variable shadowing detected: ${shadowedVars.join(', ')}`
         });
       }
     }
+  }
+
+  /**
+   * Validate code logic
+   */
+  _validateLogic(code) {
+    const result = {
+      valid: true,
+      checks: [],
+      warnings: []
+    };
+
+    // Check for logical inconsistencies
+    this._checkUnreachableCode(code, result.warnings);
+
+    // Empty catch blocks
+    if (/catch\s*\([^)]*\)\s*\{\s*\}/.test(code)) {
+      result.warnings.push({
+        message: 'Empty catch block found - errors may be silently ignored'
+      });
+    }
+
+    this._checkInfiniteLoops(code, result);
+
+    // Equality comparisons
+    if (/==(?!=)/.test(code) || /!=(?!=)/.test(code)) {
+      result.warnings.push({
+        message: 'Loose equality (==, !=) used - consider strict equality (===, !==)'
+      });
+    }
+
+    // Unhandled promises
+    const promisePattern = /new\s+Promise\s*\([^)]*\)|\.then\s*\([^)]*\)/g;
+    const catchPattern = /\.catch\s*\([^)]*\)/g;
+    const promiseCount = (code.match(promisePattern) || []).length;
+    const catchCount = (code.match(catchPattern) || []).length;
+    
+    if (promiseCount > catchCount * 2) {
+      result.warnings.push({
+        message: 'Some promises may lack error handling'
+      });
+    }
+
+    this._checkVariableShadowing(code, result.warnings);
 
     if (result.checks.length === 0) {
       result.checks.push({
@@ -248,16 +264,9 @@ class LogicValidator {
   }
 
   /**
-   * Validate code consistency
+   * Check indentation consistency
    */
-  _validateConsistency(code) {
-    const result = {
-      valid: true,
-      checks: [],
-      warnings: []
-    };
-
-    // 1. Consistent indentation
+  _checkIndentation(code, warnings) {
     const lines = code.split('\n');
     const indentations = lines
       .filter(line => line.trim().length > 0)
@@ -275,13 +284,17 @@ class LogicValidator {
       });
       
       if (gcd !== 2 && gcd !== 4) {
-        result.warnings.push({
+        warnings.push({
           message: `Inconsistent indentation detected (GCD: ${gcd})`
         });
       }
     }
+  }
 
-    // 2. Consistent naming conventions
+  /**
+   * Check naming convention consistency
+   */
+  _checkNamingConventions(code, warnings) {
     const functionNames = (code.match(/function\s+(\w+)|const\s+(\w+)\s*=/g) || [])
       .map(m => m.match(/\w+$/)?.[0])
       .filter(Boolean);
@@ -292,13 +305,17 @@ class LogicValidator {
       
       if (camelCaseCount > 0 && snakeCaseCount > 0 && 
           Math.abs(camelCaseCount - snakeCaseCount) < functionNames.length * 0.8) {
-        result.warnings.push({
+        warnings.push({
           message: 'Mixed naming conventions detected (camelCase vs snake_case)'
         });
       }
     }
+  }
 
-    // 3. Consistent quote style
+  /**
+   * Check quote style consistency
+   */
+  _checkQuoteStyle(code, warnings) {
     const singleQuotes = (code.match(/'/g) || []).length;
     const doubleQuotes = (code.match(/"/g) || []).length;
     const backticks = (code.match(/`/g) || []).length;
@@ -309,13 +326,30 @@ class LogicValidator {
       const maxCount = Math.max(...quoteCounts);
       
       if (maxCount < totalQuotes * 0.7) {
-        result.warnings.push({
+        warnings.push({
           message: 'Inconsistent quote style detected'
         });
       }
     }
+  }
 
-    // 4. Consistent semicolon usage
+  /**
+   * Validate code consistency
+   */
+  _validateConsistency(code) {
+    const result = {
+      valid: true,
+      checks: [],
+      warnings: []
+    };
+
+    const lines = code.split('\n');
+    
+    this._checkIndentation(code, result.warnings);
+    this._checkNamingConventions(code, result.warnings);
+    this._checkQuoteStyle(code, result.warnings);
+
+    // Consistent semicolon usage
     const linesWithCode = lines.filter(line => {
       const trimmed = line.trim();
       return trimmed.length > 0 && 
@@ -475,22 +509,22 @@ function main() {
 
   const results = validator.validate(testCode);
 
-  console.log('\n=== Logic Validation ===\n');
-  console.log(`Overall: ${results.valid ? '✓ VALID' : '✗ INVALID'}`);
-  console.log(`Score: ${results.score}/100`);
-  console.log(`Passed: ${results.summary.passed}/${results.summary.totalChecks}`);
-  console.log(`Warnings: ${results.summary.warnings}`);
+  console.warn('\n=== Logic Validation ===\n');
+  console.warn(`Overall: ${results.valid ? '✓ VALID' : '✗ INVALID'}`);
+  console.warn(`Score: ${results.score}/100`);
+  console.warn(`Passed: ${results.summary.passed}/${results.summary.totalChecks}`);
+  console.warn(`Warnings: ${results.summary.warnings}`);
 
   for (const [checkName, checkResult] of Object.entries(results.checks)) {
-    console.log(`\n--- ${checkName.toUpperCase()} ---`);
+    console.warn(`\n--- ${checkName.toUpperCase()} ---`);
     for (const check of checkResult.checks) {
       const status = check.passed ? '✓' : '✗';
-      console.log(`${status} ${check.message}`);
+      console.warn(`${status} ${check.message}`);
     }
     if (checkResult.warnings?.length > 0) {
-      console.log('\nWarnings:');
+      console.warn('\nWarnings:');
       for (const warning of checkResult.warnings) {
-        console.log(`⚠ ${warning.message}`);
+        console.warn(`⚠ ${warning.message}`);
       }
     }
   }

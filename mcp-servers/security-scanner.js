@@ -464,6 +464,102 @@ return '***';
 }
 
 /**
+ * Get tool definitions for the security scanner
+ */
+function getToolDefinitions() {
+  return [
+    {
+      name: 'scan-vulnerabilities',
+      description: 'Scan code for security vulnerabilities',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          code: { type: 'string', description: 'Code to scan' },
+          language: { type: 'string', default: 'javascript' },
+          severity: {
+            type: 'string',
+            enum: ['critical', 'high', 'medium', 'low', 'all'],
+            default: 'all'
+          }
+        },
+        required: ['code']
+      }
+    },
+    {
+      name: 'check-dependencies',
+      description: 'Check dependencies for known vulnerabilities',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          dependencies: {
+            type: ['object', 'array'],
+            description: 'Dependencies to check'
+          },
+          ecosystem: { type: 'string', default: 'npm' }
+        },
+        required: ['dependencies']
+      }
+    },
+    {
+      name: 'analyze-secrets',
+      description: 'Analyze content for exposed secrets and credentials',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', description: 'Content to analyze' },
+          strictMode: { type: 'boolean', default: true }
+        },
+        required: ['content']
+      }
+    }
+  ];
+}
+
+/**
+ * Handle tool execution requests
+ */
+function handleToolCall(scanner, name, args) {
+  switch (name) {
+    case 'scan-vulnerabilities': {
+      const validated = ScanVulnerabilitiesSchema.parse(args);
+      const result = scanner.scanVulnerabilities(
+        validated.code,
+        validated.language,
+        validated.severity
+      );
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+      };
+    }
+
+    case 'check-dependencies': {
+      const validated = CheckDependenciesSchema.parse(args);
+      const result = scanner.checkDependencies(
+        validated.dependencies,
+        validated.ecosystem
+      );
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+      };
+    }
+
+    case 'analyze-secrets': {
+      const validated = AnalyzeSecretsSchema.parse(args);
+      const result = scanner.analyzeSecrets(
+        validated.content,
+        validated.strictMode
+      );
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+      };
+    }
+
+    default:
+      throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+  }
+}
+
+/**
  * Initialize and start the MCP server
  */
 async function main() {
@@ -481,96 +577,14 @@ async function main() {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: [
-      {
-        name: 'scan-vulnerabilities',
-        description: 'Scan code for security vulnerabilities',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            code: { type: 'string', description: 'Code to scan' },
-            language: { type: 'string', default: 'javascript' },
-            severity: {
-              type: 'string',
-              enum: ['critical', 'high', 'medium', 'low', 'all'],
-              default: 'all'
-            }
-          },
-          required: ['code']
-        }
-      },
-      {
-        name: 'check-dependencies',
-        description: 'Check dependencies for known vulnerabilities',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            dependencies: {
-              type: ['object', 'array'],
-              description: 'Dependencies to check'
-            },
-            ecosystem: { type: 'string', default: 'npm' }
-          },
-          required: ['dependencies']
-        }
-      },
-      {
-        name: 'analyze-secrets',
-        description: 'Analyze content for exposed secrets and credentials',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            content: { type: 'string', description: 'Content to analyze' },
-            strictMode: { type: 'boolean', default: true }
-          },
-          required: ['content']
-        }
-      }
-    ]
+    tools: getToolDefinitions()
   }));
 
   server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
-      switch (name) {
-        case 'scan-vulnerabilities': {
-          const validated = ScanVulnerabilitiesSchema.parse(args);
-          const result = scanner.scanVulnerabilities(
-            validated.code,
-            validated.language,
-            validated.severity
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'check-dependencies': {
-          const validated = CheckDependenciesSchema.parse(args);
-          const result = scanner.checkDependencies(
-            validated.dependencies,
-            validated.ecosystem
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'analyze-secrets': {
-          const validated = AnalyzeSecretsSchema.parse(args);
-          const result = scanner.analyzeSecrets(
-            validated.content,
-            validated.strictMode
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        default:
-          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-      }
+      return handleToolCall(scanner, name, args);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(

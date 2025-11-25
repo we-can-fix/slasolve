@@ -24,8 +24,8 @@ const ALLOWED_HEADERS = [
 function sanitizeHeaders(headers: Record<string, unknown>): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
   for (const key of ALLOWED_HEADERS) {
-    if ((headers as any)[key]) {
-      sanitized[key] = key === 'authorization' ? '[REDACTED]' : (headers as any)[key];
+    if (headers[key]) {
+      sanitized[key] = key === 'authorization' ? '[REDACTED]' : headers[key];
     }
   }
   return sanitized;
@@ -34,21 +34,21 @@ function sanitizeHeaders(headers: Record<string, unknown>): Record<string, unkno
 export const loggingMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const traceId = randomUUID();
   const startTime = Date.now();
-  (req as any).traceId = traceId;
+  req.traceId = traceId;
 
   const requestLog: RequestLog = {
     traceId,
     method: req.method,
     url: req.url,
     userAgent: req.get('user-agent') || 'unknown',
-    ip: (req.ip as string) || (req.connection as any).remoteAddress || 'unknown',
+    ip: (req.ip as string) || (req.socket?.remoteAddress as string) || 'unknown',
     timestamp: new Date().toISOString()
   };
 
   if (config.LOG_LEVEL === 'debug') {
     console.log('Request started:', {
       ...requestLog,
-      headers: sanitizeHeaders(req.headers as any),
+      headers: sanitizeHeaders(req.headers as Record<string, unknown>),
       body: req.body ? '[BODY_PRESENT]' : '[NO_BODY]'
     });
   } else {

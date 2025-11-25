@@ -101,7 +101,7 @@ describe('ProvenanceService', () => {
       const invalidAttestation = {
         id: 'test',
         // Missing required fields
-      } as any;
+      } as unknown as Attestation;
 
       const isValid = await service.verifyAttestation(invalidAttestation);
       expect(isValid).toBe(false);

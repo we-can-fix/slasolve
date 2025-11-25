@@ -313,38 +313,38 @@ async function main() {
   const validator = new DeploymentValidator();
   const results = await validator.validate();
 
-  console.log('\n=== Deployment Configuration Validation ===\n');
-  console.log(`Overall Status: ${results.valid ? '✓ PASSED' : '✗ FAILED'}`);
-  console.log(`Score: ${results.score}/100 (Grade: ${results.grade})`);
-  console.log(`Errors: ${results.errors.length}`);
-  console.log(`Warnings: ${results.warnings.length}`);
+  console.warn('\n=== Deployment Configuration Validation ===\n');
+  console.warn(`Overall Status: ${results.valid ? '✓ PASSED' : '✗ FAILED'}`);
+  console.warn(`Score: ${results.score}/100 (Grade: ${results.grade})`);
+  console.warn(`Errors: ${results.errors.length}`);
+  console.warn(`Warnings: ${results.warnings.length}`);
 
   if (results.errors.length > 0) {
-    console.log('\n--- Errors ---');
+    console.warn('\n--- Errors ---');
     for (const error of results.errors) {
-      console.log(`\n${error.name}:`);
+      console.warn(`\n${error.name}:`);
       for (const detail of error.details) {
-        console.log(`  ✗ ${detail}`);
+        console.warn(`  ✗ ${detail}`);
       }
     }
   }
 
   if (results.warnings.length > 0) {
-    console.log('\n--- Warnings ---');
+    console.warn('\n--- Warnings ---');
     for (const warning of results.warnings) {
-      console.log(`\n${warning.name}:`);
+      console.warn(`\n${warning.name}:`);
       for (const detail of warning.details) {
-        console.log(`  ⚠ ${detail}`);
+        console.warn(`  ⚠ ${detail}`);
       }
     }
   }
 
-  console.log('\n--- All Checks ---');
+  console.warn('\n--- All Checks ---');
   for (const check of results.checks) {
     const status = check.passed ? '✓' : '✗';
-    console.log(`\n${status} ${check.name}:`);
+    console.warn(`\n${status} ${check.name}:`);
     for (const detail of check.details) {
-      console.log(`  ${detail}`);
+      console.warn(`  ${detail}`);
     }
   }
 
