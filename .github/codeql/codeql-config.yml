@@ -24,14 +24,6 @@ paths-ignore:
   - "**/.vscode/**"
   - "**/.github/**"
 
-paths:
-  - "src"
-  - "lib"
-  - "app"
-  - "core"
-  - "mcp-servers"
-  - "advanced-system-src"
-
 packs:
   javascript:
     - codeql/javascript-queries:AlertSuppression.ql
