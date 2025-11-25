@@ -11,7 +11,6 @@ Core capabilities for autonomous systems:
 Adapted for: Safety-critical autonomous systems requiring intelligent dispatch
 """
 
-import os
 import json
 import logging
 from typing import Optional, Dict, Any, AsyncGenerator
