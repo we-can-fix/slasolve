@@ -1,34 +1,24 @@
 # Intelligent Automation Module Requirements
 # Python dependencies for autonomous code analysis and fixing
-
-# Core Framework
-python>=3.10
+#
+# NOTE: This file defines OPTIONAL dependencies for the intelligent-automation module.
+# The module uses a plugin architecture and can operate without external AI/ML dependencies.
+# Python version requirement is managed by pyproject.toml or runtime environment.
 
 # Async and Concurrency
-asyncio>=3.4.3
 typing-extensions>=4.11.0
 
-# Configuration and Environment
+# Configuration and Environment (optional)
 python-dotenv>=1.0.0
 
-# Logging
+# Logging (optional - uses standard logging if not available)
 loguru>=0.7.2
 
-# Optional: AI/ML Integration (for future enhancement)
-# openai>=1.0.0
-# camel-ai>=0.2.22
-
-# Optional: Web Service (if needed for API exposure)
-# fastapi>=0.109.2
-# uvicorn>=0.27.1
-# starlette>=0.27.0
-# pydantic>=2.6.1
-
-# Development and Testing
+# Development and Testing (dev-only)
 pytest>=8.0.0
 pytest-asyncio>=0.23.5
 pytest-cov>=4.1.0
 
-# Code Quality
+# Code Quality (dev-only)
 black>=24.1.1
 isort>=5.13.2

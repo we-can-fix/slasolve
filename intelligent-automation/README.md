@@ -94,18 +94,40 @@ intelligent-automation/
 
 ## 快速開始 Quick Start
 
+### 環境需求 Environment Requirements
+
+**重要說明 IMPORTANT:**
+- 本模組使用插件架構，核心功能不依賴外部 AI/ML 服務
+- Python 版本：>= 3.8（不強制 3.10）
+- ModelScope API 等服務為**可選**，非必需
+- 依賴管理遵循治理分層原則，避免硬編碼
+
+This module uses a plugin architecture. Core functionality works without external AI/ML services.
+- Python version: >= 3.8 (not hardcoded to 3.10)
+- ModelScope API and similar services are **OPTIONAL**
+- Dependency management follows governance layering principles
+
 ### 安裝 Installation
 
 ```bash
-# 安裝 Python 依賴
+# 方式 1: 安裝最小依賴（推薦）
+# Method 1: Install minimal dependencies (recommended)
+pip install typing-extensions python-dotenv loguru
+
+# 方式 2: 安裝完整開發依賴
+# Method 2: Install full development dependencies
 pip install -r requirements.txt
 
-# 或使用虛擬環境
+# 方式 3: 使用虛擬環境
+# Method 3: Use virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # 或 venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
+
+**注意 Note:** 模組可在缺少部分依賴時正常運行，會自動降級功能。
+Module can operate normally with missing optional dependencies by gracefully degrading features.
 
 ### 基本使用 Basic Usage
 
