@@ -5,7 +5,8 @@
 # The module uses a plugin architecture and can operate without external AI/ML dependencies.
 # Python version requirement is managed by pyproject.toml or runtime environment.
 
-# Async and Concurrency
+# Core utilities
+packaging>=23.0  # For version parsing and conflict detection
 typing-extensions>=4.11.0
 
 # Configuration and Environment (optional)

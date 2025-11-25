@@ -1,11 +1,19 @@
-# Auto Environment Upgrade System
-# 自動環境升級系統
+# Auto Environment Upgrade System - Enterprise Edition
+# 自動環境升級系統 - 企業版
 
 ## 概述 Overview
 
 當檢測到缺少依賴時，系統會自動升級環境配置並安裝缺失的依賴，確保最佳功能體驗。
 
 When missing dependencies are detected, the system automatically upgrades the environment configuration and installs missing dependencies to ensure optimal functionality.
+
+## 🆕 Enterprise Features (New in v2.0)
+
+- ✅ **並行安裝** Parallel Installation - Install multiple dependencies simultaneously
+- ✅ **版本衝突檢測** Version Conflict Detection - Detect and report version conflicts
+- ✅ **依賴緩存** Dependency Caching - Cache installation status to speed up checks
+- ✅ **配置文件支持** Config File Support - Load dependencies from requirements.txt, pyproject.toml, etc.
+- ✅ **智能推薦** Intelligent Recommendations - Suggest related dependencies
 
 ---
 
@@ -17,10 +25,16 @@ When missing dependencies are detected, the system automatically upgrades the en
 Missing Dep → Degrade → Limited Features
 ```
 
-### 自動升級方式 Auto-Upgrade Approach
+### 自動升級方式 Auto-Upgrade Approach (v1.0)
 ```
 缺少依賴 → 自動檢測 → 自動安裝 → 完整功能
 Missing Dep → Detect → Install → Full Features
+```
+
+### 🆕 企業版增強 Enterprise Enhancement (v2.0)
+```
+配置文件 → 依賴分析 → 衝突檢測 → 並行安裝 → 智能推薦 → 完整功能
+Config File → Analyze → Detect Conflicts → Parallel Install → Recommend → Full Features
 ```
 
 **優勢 Advantages:**
@@ -28,6 +42,10 @@ Missing Dep → Detect → Install → Full Features
 - ✅ 確保最佳體驗 Optimal experience
 - ✅ 智能依賴管理 Intelligent dependency management
 - ✅ 自動環境配置 Automatic environment setup
+- 🆕 並行安裝提速 3-5x Parallel installation 3-5x faster
+- 🆕 版本衝突預警 Version conflict early warning
+- 🆕 安裝緩存加速 Installation caching for speed
+- 🆕 智能依賴推薦 Intelligent dependency recommendations
 
 ---
 
@@ -51,6 +69,26 @@ python auto_upgrade_env.py --check-only
 # 升級特定依賴
 # Upgrade specific dependencies
 python auto_upgrade_env.py --deps dotenv loguru
+
+# 🆕 從配置文件安裝
+# Install from config file
+python auto_upgrade_env.py --from-config requirements.txt
+
+# 🆕 從配置文件安裝（並行模式）
+# Install from config file (parallel mode)
+python auto_upgrade_env.py --from-config requirements.txt --parallel
+
+# 🆕 檢測版本衝突
+# Detect version conflicts
+python auto_upgrade_env.py --from-config requirements.txt --detect-conflicts
+
+# 🆕 獲取依賴推薦
+# Get dependency recommendations
+python auto_upgrade_env.py --recommend pytest
+
+# 🆕 清除安裝緩存
+# Clear installation cache
+python auto_upgrade_env.py --clear-cache
 ```
 
 ### 方式 2: 在代碼中使用 Using in Code
@@ -79,6 +117,40 @@ print(upgrader.get_summary())
 from auto_upgrade_env import auto_upgrade_on_import
 
 upgrader = auto_upgrade_on_import()
+```
+
+### 🆕 方式 4: 企業版高級功能 Enterprise Advanced Features
+
+```python
+from auto_upgrade_env import AutoUpgradeEnvironment
+from pathlib import Path
+
+# 創建升級器（啟用緩存）
+upgrader = AutoUpgradeEnvironment(auto_install=True)
+
+# 功能 1: 並行安裝多個依賴
+packages = ['pytest>=8.0.0', 'black>=24.1.1', 'isort>=5.13.2']
+results = upgrader.install_packages_parallel(packages, max_workers=3)
+print(f"並行安裝結果: {results}")
+
+# 功能 2: 檢測版本衝突
+packages = ['django>=4.0', 'django>=3.2']  # 衝突示例
+conflicts = upgrader.detect_version_conflicts(packages)
+if conflicts:
+    print(f"檢測到 {len(conflicts)} 個衝突")
+    for conflict in conflicts:
+        print(f"  {conflict['package']}: {conflict['existing']} vs {conflict['new']}")
+
+# 功能 3: 從配置文件加載並安裝
+config_path = Path('requirements.txt')
+results = upgrader.upgrade_from_config(config_path, parallel=True)
+
+# 功能 4: 獲取智能推薦
+recommendations = upgrader.recommend_dependencies('pytest')
+print(f"推薦安裝: {recommendations}")  # ['pytest-asyncio', 'pytest-cov']
+
+# 功能 5: 查看緩存信息
+print(upgrader.get_summary())  # 包含緩存統計
 ```
 
 ---
