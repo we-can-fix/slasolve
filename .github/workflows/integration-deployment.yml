@@ -256,7 +256,8 @@ jobs:
           
           if [ -f "auto-fix-bot-dashboard.html" ]; then
             echo "✅ auto-fix-bot-dashboard.html 存在"
-            size=$(stat -f%z "auto-fix-bot-dashboard.html" 2>/dev/null || stat -c%s "auto-fix-bot-dashboard.html")
+            # Ubuntu runner 下建議使用 stat -c%s 或 wc -c
+            size=$(stat -c%s "auto-fix-bot-dashboard.html")
             echo "  文件大小: $size bytes"
           else
             echo "❌ auto-fix-bot-dashboard.html 不存在"
