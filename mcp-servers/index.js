@@ -16,6 +16,29 @@ import http from 'http';
 const SERVER_PORT = process.env.MCP_SERVER_PORT || 3001;
 const SERVER_HOST = process.env.MCP_SERVER_HOST || '0.0.0.0';
 
+// MCP 服務模組列表
+const MCP_SERVICES = [
+  'Code Analysis',
+  'SLSA Validation',
+  'Security Scanning',
+  'Deployment Validation',
+  'Logic Validation',
+  'Performance Analysis',
+  'Test Generation',
+  'Documentation Generation'
+];
+
+const MCP_SERVICE_FILES = [
+  'code-analyzer.js',
+  'slsa-validator.js',
+  'security-scanner.js',
+  'deployment-validator.js',
+  'logic-validator.js',
+  'performance-analyzer.js',
+  'test-generator.js',
+  'doc-generator.js'
+];
+
 /**
  * 創建 HTTP 服務器用於健康檢查和狀態監控
  */
@@ -100,16 +123,7 @@ function createHealthCheckServer() {
           version: '/version',
           status: '/status'
         },
-        features: [
-          'Code Analysis',
-          'SLSA Validation',
-          'Security Scanning',
-          'Deployment Validation',
-          'Logic Validation',
-          'Performance Analysis',
-          'Test Generation',
-          'Documentation Generation'
-        ]
+        features: MCP_SERVICES
       }));
       return;
     }
@@ -158,14 +172,9 @@ async function main() {
     console.log(`📝 Version endpoint: http://${SERVER_HOST}:${SERVER_PORT}/version`);
     console.log('');
     console.log('🎯 Available MCP Services:');
-    console.log('  - Code Analysis (code-analyzer.js)');
-    console.log('  - SLSA Validation (slsa-validator.js)');
-    console.log('  - Security Scanning (security-scanner.js)');
-    console.log('  - Deployment Validation (deployment-validator.js)');
-    console.log('  - Logic Validation (logic-validator.js)');
-    console.log('  - Performance Analysis (performance-analyzer.js)');
-    console.log('  - Test Generation (test-generator.js)');
-    console.log('  - Documentation Generation (doc-generator.js)');
+    MCP_SERVICE_FILES.forEach((file, index) => {
+      console.log(`  - ${MCP_SERVICES[index]} (${file})`);
+    });
     console.log('');
     console.log('✨ MCP Servers are ready!');
   });
