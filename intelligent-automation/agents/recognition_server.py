@@ -13,7 +13,7 @@ Adapted for: Safety-critical autonomous systems requiring intelligent dispatch
 
 import json
 import logging
-from typing import Optional, Dict, Any, AsyncGenerator
+from typing import Dict, Any, AsyncGenerator
 try:
     from dotenv import load_dotenv
     load_dotenv()
