@@ -233,7 +233,7 @@ def auto_upgrade_on_import():
     core_deps = ['dotenv', 'loguru']
     
     logger.info("=== 自動環境升級檢查 Auto Environment Upgrade Check ===")
-    results = upgrader.check_and_upgrade(core_deps)
+    upgrader.check_and_upgrade(core_deps)
     
     # Print summary
     print(upgrader.get_summary())
