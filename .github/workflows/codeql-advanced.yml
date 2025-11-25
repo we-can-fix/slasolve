@@ -11,8 +11,8 @@ on:
 jobs:
   analyze:
     name: Analyze Code
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
     permissions:
       actions: read
       contents: read
@@ -37,26 +37,6 @@ jobs:
     - name: Custom Build Configuration
       run: |
         case "${{ matrix.language }}" in
-          java)
-            if [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
-              ./gradlew build -x test --no-daemon
-            elif [ -f "pom.xml" ]; then
-              mvn clean compile -DskipTests
-            fi
-            ;;
-          csharp)
-            dotnet restore
-            dotnet build --configuration Release --no-restore
-            ;;
-          cpp)
-            if [ -f "CMakeLists.txt" ]; then
-              mkdir -p build && cd build
-              cmake .. -DCMAKE_BUILD_TYPE=Release
-              make -j$(nproc)
-            elif [ -f "Makefile" ]; then
-              make clean && make release
-            fi
-            ;;
           javascript)
             if [ -f "package-lock.json" ]; then
               npm ci --production=false
@@ -75,11 +55,6 @@ jobs:
             if [ -f "setup.py" ]; then
               pip install -e .
             fi
-            ;;
-          go)
-            go mod download
-            go mod verify
-            go build ./...
             ;;
         esac
 
