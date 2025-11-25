@@ -18,12 +18,15 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pipeline_service import pipeline_service
-from agents.task_executor import TaskExecutor
-from agents.recognition_server import RecognitionServer
-from agents.visualization_agent import VisualizationAgent
-
-
+try:
+    from pipeline_service import pipeline_service
+    from agents.task_executor import TaskExecutor
+    from agents.recognition_server import RecognitionServer
+    from agents.visualization_agent import VisualizationAgent
+except ImportError as e:
+    print(f"❌ 模組導入失敗: {e}")
+    print("請先安裝依賴套件：pip install -r requirements.txt")
+    sys.exit(1)
 async def demo_code_analysis():
     """Demo: Comprehensive code analysis with auto-fix"""
     print("="*70)
