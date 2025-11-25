@@ -454,25 +454,54 @@ class SLSAValidator {
 }
 
 /**
- * Initialize and start the MCP server
+ * Handle tool execution requests
  */
-async function main() {
-  const validator = new SLSAValidator();
-  const server = new Server(
-    {
-      name: 'slsa-validator',
-      version: '1.0.0',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
+function handleToolCall(validator, name, args) {
+  switch (name) {
+        case 'validate-provenance': {
+          const validated = ValidateProvenanceSchema.parse(args);
+          const result = validator.validateProvenance(
+            validated.provenance,
+            validated.level
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: [
-      {
+        case 'check-slsa-compliance': {
+          const validated = CheckSLSAComplianceSchema.parse(args);
+          const result = validator.checkSLSACompliance(
+            validated.provenance,
+            validated.targetLevel
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case 'generate-compliance-report': {
+          const validated = GenerateComplianceReportSchema.parse(args);
+          const result = validator.generateComplianceReport(
+            validated.provenance,
+            validated.includeRemediation
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        default:
+          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+      }
+}
+
+/**
+ * Get tool definitions for the slsavalidator
+ */
+function getToolDefinitions() {
+  return [
+{
         name: 'validate-provenance',
         description: 'Validate SLSA provenance data for specified level',
         inputSchema: {
@@ -531,50 +560,35 @@ async function main() {
           required: ['provenance']
         }
       }
-    ]
+  ];
+}
+
+/**
+ * Initialize and start the MCP server
+ */
+async function main() {
+  const validator = new SLSAValidator();
+  const server = new Server(
+    {
+      name: 'slsa-validator',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: getToolDefinitions()
   }));
 
   server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
-      switch (name) {
-        case 'validate-provenance': {
-          const validated = ValidateProvenanceSchema.parse(args);
-          const result = validator.validateProvenance(
-            validated.provenance,
-            validated.level
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'check-slsa-compliance': {
-          const validated = CheckSLSAComplianceSchema.parse(args);
-          const result = validator.checkSLSACompliance(
-            validated.provenance,
-            validated.targetLevel
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'generate-compliance-report': {
-          const validated = GenerateComplianceReportSchema.parse(args);
-          const result = validator.generateComplianceReport(
-            validated.provenance,
-            validated.includeRemediation
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        default:
-          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-      }
+      return handleToolCall(validator, name, args);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(

@@ -49,7 +49,7 @@ class ComprehensiveValidator {
 
     try {
       // 1. Deployment configuration validation
-      console.warn('Running deployment validation...');
+      console.info('Running deployment validation...');
       report.validations.deployment = await this.deploymentValidator.validate(this.basePath);
       
       if (!report.validations.deployment.valid) {
@@ -57,7 +57,7 @@ class ComprehensiveValidator {
       }
 
       // 2. Code logic validation for all JS files
-      console.warn('Running logic validation...');
+      console.info('Running logic validation...');
       const jsFiles = await this._findJavaScriptFiles(this.basePath);
       report.summary.totalFiles = jsFiles.length;
       

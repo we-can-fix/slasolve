@@ -478,26 +478,73 @@ score -= 5;
 }
 
 /**
- * Initialize and start the MCP server
+ * Handle tool execution requests
  */
-async function main() {
-  const analyzer = new CodeAnalyzer();
-  const server = new Server(
-    {
-      name: 'code-analyzer',
-      version: '1.0.0',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
+function handleToolCall(analyzer, name, args) {
+  switch (name) {
+        case 'analyze-code': {
+          const validated = AnalyzeCodeSchema.parse(args);
+          const result = analyzer.analyzeCode(
+            validated.code,
+            validated.language,
+            validated.options
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
 
-  // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: [
-      {
+        case 'detect-issues': {
+          const validated = DetectIssuesSchema.parse(args);
+          const result = analyzer.detectIssues(validated.code, validated.severity);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  totalIssues: result.length,
+                  issues: result
+                }, null, 2)
+              }
+            ]
+          };
+        }
+
+        case 'suggest-improvements': {
+          const validated = SuggestImprovementsSchema.parse(args);
+          const result = analyzer.suggestImprovements(
+            validated.code,
+            validated.context
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
+
+        default:
+          throw new McpError(
+            ErrorCode.MethodNotFound,
+            `Unknown tool: ${name}`
+          );
+      }
+}
+
+/**
+ * Get tool definitions for the code analyzer
+ */
+function getToolDefinitions() {
+  return [
+{
         name: 'analyze-code',
         description: 'Analyze code quality, complexity, and metrics',
         inputSchema: {
@@ -563,7 +610,29 @@ async function main() {
           required: ['code']
         }
       }
-    ]
+  ];
+}
+
+/**
+ * Initialize and start the MCP server
+ */
+async function main() {
+  const analyzer = new CodeAnalyzer();
+  const server = new Server(
+    {
+      name: 'code-analyzer',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  // List available tools
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: getToolDefinitions()
   }));
 
   // Handle tool calls
@@ -571,62 +640,8 @@ async function main() {
     const { name, arguments: args } = request.params;
 
     try {
-      switch (name) {
-        case 'analyze-code': {
-          const validated = AnalyzeCodeSchema.parse(args);
-          const result = analyzer.analyzeCode(
-            validated.code,
-            validated.language,
-            validated.options
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
-            ]
-          };
-        }
+      return handleToolCall(analyzer, name, args);
 
-        case 'detect-issues': {
-          const validated = DetectIssuesSchema.parse(args);
-          const result = analyzer.detectIssues(validated.code, validated.severity);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  totalIssues: result.length,
-                  issues: result
-                }, null, 2)
-              }
-            ]
-          };
-        }
-
-        case 'suggest-improvements': {
-          const validated = SuggestImprovementsSchema.parse(args);
-          const result = analyzer.suggestImprovements(
-            validated.code,
-            validated.context
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
-            ]
-          };
-        }
-
-        default:
-          throw new McpError(
-            ErrorCode.MethodNotFound,
-            `Unknown tool: ${name}`
-          );
-      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(
