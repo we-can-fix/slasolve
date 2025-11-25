@@ -97,11 +97,20 @@ export class ProvenanceService {
       content
     );
 
+    // 生成格式為 att_timestamp_hash 的 ID
+    const timestamp = Date.now();
+    const hash = createHash('sha256').update(`${timestamp}${subjectPath}`).digest('hex').substring(0, 8);
+    const attestationId = `att_${timestamp}_${hash}`;
+
+    const buildInvocationId = metadata.buildInvocationId || randomUUID();
+    const startedOn = metadata.buildStartedOn || new Date().toISOString();
+    const finishedOn = metadata.buildFinishedOn || new Date().toISOString();
+
     const buildMetadata: BuildMetadata = {
       buildType: 'https://slasolve.dev/contracts/build/v1',
-      invocationId: randomUUID(),
-      startedOn: metadata.buildStartedOn || new Date().toISOString(),
-      finishedOn: metadata.buildFinishedOn || new Date().toISOString(),
+      invocationId: buildInvocationId,
+      startedOn,
+      finishedOn,
       builder: {
         id: builder.id,
         version: {
@@ -124,8 +133,8 @@ export class ProvenanceService {
     
     // 轉換為既有的 BuildAttestation 格式以保持相容性
     return {
-      id: buildMetadata.invocationId,
-      timestamp: buildMetadata.startedOn,
+      id: attestationId,
+      timestamp: startedOn,
       subject: {
         name: subject.name,
         digest: `sha256:${subject.digest.sha256}`,
@@ -135,7 +144,7 @@ export class ProvenanceService {
         type: slsaProvenance.predicateType,
         builder,
         recipe: {
-          type: buildMetadata.buildType,
+          type: 'https://github.com/slasolve/build',
           definedInMaterial: 'package.json',
           entryPoint: 'npm run build',
           arguments: buildMetadata.externalParameters || {},
@@ -145,15 +154,15 @@ export class ProvenanceService {
           }
         },
         metadata: {
-          buildStartedOn: buildMetadata.startedOn,
-          buildFinishedOn: buildMetadata.finishedOn || buildMetadata.startedOn,
+          buildStartedOn: startedOn,
+          buildFinishedOn: finishedOn,
           completeness: {
             parameters: true,
             environment: true,
             materials: true
           },
-          reproducible: metadata.reproducible || false,
-          buildInvocationId: buildMetadata.invocationId
+          reproducible: metadata.reproducible !== undefined ? metadata.reproducible : false,
+          buildInvocationId
         }
       },
       // 附加 SLSA 認證資料
