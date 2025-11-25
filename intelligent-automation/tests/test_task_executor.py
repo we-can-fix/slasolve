@@ -4,7 +4,6 @@ Tests for TaskExecutor
 """
 
 import pytest
-import asyncio
 from agents.task_executor import TaskExecutor
 
 
