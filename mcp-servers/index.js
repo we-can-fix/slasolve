@@ -151,20 +151,25 @@ async function main() {
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔧 Node.js: ${process.version}`);
 
-  // 設置信號處理
-  process.on('SIGINT', () => {
-    console.log('\n🛑 Received SIGINT, shutting down gracefully...');
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', () => {
-    console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
-    process.exit(0);
-  });
-
   // 創建並啟動 HTTP 健康檢查服務器
   const healthServer = createHealthCheckServer();
   
+  // 優雅關閉處理 - 在伺服器創建後註冊
+  const gracefulShutdown = async (signal) => {
+    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+    await new Promise((resolve) => {
+      healthServer.close(() => {
+        console.log('✅ HTTP server closed');
+        resolve();
+      });
+    });
+    process.exit(0);
+  };
+
+  // 設置信號處理
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
   healthServer.listen(SERVER_PORT, SERVER_HOST, () => {
     console.log(`✅ Health check server listening on http://${SERVER_HOST}:${SERVER_PORT}`);
     console.log(`📊 Health endpoint: http://${SERVER_HOST}:${SERVER_PORT}/health`);
