@@ -408,7 +408,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| 層級 | 服務 | 評分 | 狀態 | 位置 |" >> $GITHUB_STEP_SUMMARY
           echo "|------|------|------|------|------|" >> $GITHUB_STEP_SUMMARY
-          tier1_status="${{ needs.tier1-contracts-l1.result }}"
           # 使用 Bash 關聯陣列與屬性陣列重構 tier 狀態判斷與顯示
           declare -A tiers=(
             ["tier1"]="${{ needs.tier1-contracts-l1.result }}"
