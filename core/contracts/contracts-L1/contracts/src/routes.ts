@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { Request, Response } from 'express';
 import { ProvenanceController } from './controllers/provenance';
 import { SLSAController } from './controllers/slsa';
+import { AssignmentController } from './controllers/assignment';
 
 const router = Router();
 const provenanceController = new ProvenanceController();
 const slsaController = new SLSAController();
+const assignmentController = new AssignmentController();
 
 // 健康檢查端點
 router.get('/healthz', (_req: Request, res: Response) => {
@@ -58,6 +60,16 @@ router.post('/api/v1/slsa/digest', slsaController.generateDigest);
 router.post('/api/v1/slsa/contracts', slsaController.createContractAttestation);
 router.post('/api/v1/slsa/summary', slsaController.getAttestationSummary);
 
+// 自動分派端點 (Auto-Assignment Endpoints)
+router.post('/api/v1/assignment/assign', assignmentController.assignResponsibility);
+router.post('/api/v1/assignment/status/:id', assignmentController.updateStatus);
+router.get('/api/v1/assignment/status/:id', assignmentController.getAssignmentStatus);
+router.get('/api/v1/assignment/workload', assignmentController.getWorkload);
+router.post('/api/v1/assignment/reassign/:id', assignmentController.reassign);
+router.post('/api/v1/assignment/escalate/:id', assignmentController.escalate);
+router.get('/api/v1/assignment/all', assignmentController.getAllAssignments);
+router.get('/api/v1/assignment/report', assignmentController.getPerformanceReport);
+
 // 根端點
 router.get('/', (_req: Request, res: Response) => {
   res.json({
@@ -82,6 +94,16 @@ router.get('/', (_req: Request, res: Response) => {
         generateDigest: 'POST /api/v1/slsa/digest',
         contractAttestation: 'POST /api/v1/slsa/contracts',
         summary: 'POST /api/v1/slsa/summary'
+      },
+      assignment: {
+        assign: 'POST /api/v1/assignment/assign',
+        updateStatus: 'POST /api/v1/assignment/status/{id}',
+        getStatus: 'GET /api/v1/assignment/status/{id}',
+        getWorkload: 'GET /api/v1/assignment/workload',
+        reassign: 'POST /api/v1/assignment/reassign/{id}',
+        escalate: 'POST /api/v1/assignment/escalate/{id}',
+        getAll: 'GET /api/v1/assignment/all',
+        getReport: 'GET /api/v1/assignment/report'
       }
     }
   });
