@@ -41,7 +41,7 @@ export const loggingMiddleware = (req: Request, res: Response, next: NextFunctio
     method: req.method,
     url: req.url,
     userAgent: req.get('user-agent') || 'unknown',
-    ip: (req.ip as string) || (req.socket?.remoteAddress as string) || 'unknown',
+    ip: req.ip || req.socket?.remoteAddress || 'unknown',
     timestamp: new Date().toISOString()
   };
 
