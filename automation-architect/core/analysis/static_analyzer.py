@@ -7,7 +7,7 @@ import ast
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 try:
     from loguru import logger
@@ -120,7 +120,7 @@ class StaticAnalyzer:
         self,
         file_path: Path,
         language: Optional[str] = None
-    ) -> tuple[List[Dict], CodeMetrics]:
+    ) -> Tuple[List[Dict], CodeMetrics]:
         """
         分析單個文件
         

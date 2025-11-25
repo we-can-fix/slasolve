@@ -286,9 +286,10 @@ class SecurityScanner:
         }
         
         files = []
-        for root, _, filenames in directory.walk():
+        import os
+        for root, _, filenames in os.walk(directory):
             for filename in filenames:
-                file_path = root / filename
+                file_path = Path(root) / filename
                 if file_path.suffix in scannable_extensions:
                     files.append(file_path)
         
