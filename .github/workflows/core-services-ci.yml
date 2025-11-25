@@ -120,6 +120,9 @@ jobs:
   # ==================== Docker 建置驗證 ====================
   # 注意：Docker 建置目前因 npm ci 在容器環境中的已知問題而暫時停用
   # Issue: npm 在 Docker 容器中報告 "Exit handler never called" 錯誤
+  # Tracking: https://github.com/org/repo/issues/XXX  # TODO: 更新為實際追蹤連結
+  # Workaround: 目前僅允許 workflow_dispatch 手動啟用建置，預設停用
+  # TODO: 評估使用 pnpm 或其他套件管理器作為替代方案
   # 這不影響本地開發或 CI 測試，僅影響容器化部署
   # 若要啟用，請將 enable-docker-build 設為 'true'
   docker-build-verification:
