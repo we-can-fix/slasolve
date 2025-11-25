@@ -128,7 +128,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.x'  # 依治理原則，建議使用彈性版本（或 '>=3.8'）
       
       - name: Install Dependencies
         run: |
