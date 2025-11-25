@@ -510,9 +510,9 @@ function main() {
   const results = validator.validate(testCode);
 
   console.warn('\n=== Logic Validation ===\n');
-  console.warn(`Overall: ${results.valid ? '✓ VALID' : '✗ INVALID'}`);
-  console.warn(`Score: ${results.score}/100`);
-  console.warn(`Passed: ${results.summary.passed}/${results.summary.totalChecks}`);
+  console.info(`Overall: ${results.valid ? '✓ VALID' : '✗ INVALID'}`);
+  console.info(`Score: ${results.score}/100`);
+  console.info(`Passed: ${results.summary.passed}/${results.summary.totalChecks}`);
   console.warn(`Warnings: ${results.summary.warnings}`);
 
   for (const [checkName, checkResult] of Object.entries(results.checks)) {

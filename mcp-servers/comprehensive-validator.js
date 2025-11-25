@@ -338,12 +338,12 @@ class ComprehensiveValidator {
 async function main() {
   const validator = new ComprehensiveValidator();
   
-  console.warn('Starting comprehensive validation...\n');
+  console.info('Starting comprehensive validation...\n');
   
   const report = await validator.validate();
   const formattedReport = validator.formatReport(report);
   
-  console.warn(formattedReport);
+  console.info(formattedReport);
   
   // Exit with appropriate code
   process.exit(report.overall.valid ? 0 : 1);
