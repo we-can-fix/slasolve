@@ -25,6 +25,12 @@ paths-ignore:
   - "**/build/**"
   - "**/.vscode/**"
   - "**/.github/**"
+  - "venv/**"
+  - "**/venv/**"
+  - "backups/**"
+  - "reports/**"
+  - "logs/**"
+  - "evidence/**"
 
 packs:
   javascript:
