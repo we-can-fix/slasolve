@@ -153,22 +153,6 @@ function main() {
 
   // 創建並啟動 HTTP 健康檢查服務器
   const healthServer = createHealthCheckServer();
-  
-  // 優雅關閉處理 - 在伺服器創建後註冊
-  const gracefulShutdown = async (signal) => {
-    console.info(`\n🛑 Received ${signal}, shutting down gracefully...`);
-    await new Promise((resolve) => {
-      healthServer.close(() => {
-        console.info('✅ HTTP server closed');
-        resolve();
-      });
-    });
-    process.exit(0);
-  };
-
-  // 設置信號處理
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
   healthServer.listen(SERVER_PORT, SERVER_HOST, () => {
     console.info(`✅ Health check server listening on http://${SERVER_HOST}:${SERVER_PORT}`);
@@ -182,6 +166,21 @@ function main() {
     });
     console.info('');
     console.info('✨ MCP Servers are ready!');
+
+    // 設置信號處理 - 僅在伺服器成功啟動後註冊
+    const gracefulShutdown = async (signal) => {
+      console.info(`\n🛑 Received ${signal}, shutting down gracefully...`);
+      await new Promise((resolve) => {
+        healthServer.close(() => {
+          console.info('✅ HTTP server closed');
+          resolve();
+        });
+      });
+      process.exit(0);
+    };
+
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   });
 }
 
