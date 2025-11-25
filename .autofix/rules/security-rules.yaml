@@ -15,13 +15,13 @@ rules:
     enabled: true
     
     patterns:
-      - regex: 'password\s*=\s*["\'][\w\W]+["\']'
+      - regex: "password\\s*=\\s*[\"'][\\w\\W]+[\"']"
         message: "檢測到硬編碼密碼"
-      - regex: 'api_key\s*=\s*["\'][\w\W]+["\']'
+      - regex: "api_key\\s*=\\s*[\"'][\\w\\W]+[\"']"
         message: "檢測到硬編碼 API 密鑰"
-      - regex: 'secret\s*=\s*["\'][\w\W]+["\']'
+      - regex: "secret\\s*=\\s*[\"'][\\w\\W]+[\"']"
         message: "檢測到硬編碼密鑰"
-      - regex: 'token\s*=\s*["\'][\w\W]+["\']'
+      - regex: "token\\s*=\\s*[\"'][\\w\\W]+[\"']"
         message: "檢測到硬編碼令牌"
     
     fix_strategy:
@@ -45,9 +45,9 @@ rules:
     enabled: true
     
     patterns:
-      - regex: 'execute\(["\'].*\+.*["\']'
+      - regex: "execute\\([\"'].*\\+.*[\"']"
         message: "檢測到 SQL 字符串拼接"
-      - regex: 'query\s*=\s*["\'].*\+.*["\']'
+      - regex: "query\\s*=\\s*[\"'].*\\+.*[\"']"
         message: "檢測到不安全的查詢構建"
     
     fix_strategy:
@@ -71,9 +71,9 @@ rules:
     enabled: true
     
     patterns:
-      - regex: 'innerHTML\s*=\s*[^(]'
+      - regex: "innerHTML\\s*=\\s*[^(]"
         message: "檢測到不安全的 innerHTML 使用"
-      - regex: 'document\.write\('
+      - regex: "document\\.write\\("
         message: "檢測到不安全的 document.write"
     
     fix_strategy:
@@ -144,7 +144,7 @@ rules:
     enabled: true
     
     patterns:
-      - regex: 'open\([^)]*\+.*[^)]*\)'
+      - regex: "open\\([^)]*\\+.*[^)]*\\)"
         message: "檢測到不安全的文件路徑拼接"
     
     fix_strategy:
