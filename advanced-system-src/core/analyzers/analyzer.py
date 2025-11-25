@@ -562,7 +562,6 @@ async def main():
         'parallel_analysis': True
     }
     
-    engine = CodeAnalysisEngine(config)
     print("代碼分析引擎已初始化")
 
 
