@@ -25,6 +25,8 @@ paths-ignore:
   - "**/build/**"
   - "**/.vscode/**"
   - "**/.github/**"
+  - "tools/**"
+  - "docs/**"
 
 packs:
   javascript:
