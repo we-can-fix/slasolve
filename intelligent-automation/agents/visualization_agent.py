@@ -12,7 +12,7 @@ Adapted for: Training and debugging autonomous systems
 """
 
 import logging
-from typing import Optional, Dict, Any, AsyncGenerator
+from typing import Dict, Any, AsyncGenerator
 import asyncio
 
 # Configure logging
