@@ -19,7 +19,7 @@ WORKDIR /app
 
 # 確保 /app 目錄和 nodejs 家目錄屬於 nodejs 使用者
 RUN chown -R nodejs:nodejs /app && \
-    mkdir -p /home/nodejs/.npm && \
+    mkdir -p /home/nodejs && \
     chown -R nodejs:nodejs /home/nodejs
 
 # 複製套件定義檔（利用 Docker layer cache）
@@ -31,7 +31,6 @@ COPY --chown=nodejs:nodejs src ./src
 
 # 以非 root 使用者安裝依賴並構建，符合最小權限原則
 USER nodejs
-ENV NPM_CONFIG_CACHE=/home/nodejs/.npm
 RUN npm ci && \
     npm cache clean --force && \
     npm run build
