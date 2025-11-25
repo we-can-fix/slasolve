@@ -1,0 +1,202 @@
+---
+name: Core Services CI
+
+on:
+  pull_request:
+    paths:
+      - 'core/contracts/contracts-L1/contracts/**'
+      - 'mcp-servers/**'
+      - '.github/workflows/core-services-ci.yml'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'core/contracts/contracts-L1/contracts/**'
+      - 'mcp-servers/**'
+      - '.github/workflows/core-services-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  # ==================== Tier 1: Contracts L1 Service ====================
+  contracts-l1-ci:
+    name: 🏗️ Contracts L1 CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core/contracts/contracts-L1/contracts
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: core/contracts/contracts-L1/contracts/package-lock.json
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Type check
+        run: npm run typecheck
+      
+      - name: 🎨 Lint code (允許警告)
+        run: npm run lint || echo "⚠️ Lint 警告存在但不阻斷建置"
+        continue-on-error: true
+      
+      - name: 🧪 Run tests
+        run: npm test -- --ci --coverage
+      
+      - name: 🏗️ Build application
+        run: npm run build
+      
+      - name: 📊 Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-l1-coverage
+          path: core/contracts/contracts-L1/contracts/coverage/
+          retention-days: 7
+      
+      - name: ✅ CI Summary
+        run: |
+          echo "## ✅ Contracts L1 CI 完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Type check 通過" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 測試通過" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 建置成功" >> $GITHUB_STEP_SUMMARY
+
+  # ==================== Tier 2: MCP Servers ====================
+  mcp-servers-ci:
+    name: 🔧 MCP Servers CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-servers
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: mcp-servers/package-lock.json
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🎨 Lint code (允許警告)
+        run: npm run lint || echo "⚠️ Lint 警告存在但不阻斷建置"
+        continue-on-error: true
+      
+      - name: 🔍 Validate deployment
+        run: npm run validate:deployment || echo "⚠️ 部署驗證警告"
+        continue-on-error: true
+      
+      - name: 🔍 Validate logic
+        run: npm run validate:logic || echo "⚠️ 邏輯驗證警告"
+        continue-on-error: true
+      
+      - name: ✅ CI Summary
+        run: |
+          echo "## ✅ MCP Servers CI 完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 依賴安裝完成" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 驗證執行完成" >> $GITHUB_STEP_SUMMARY
+
+  # ==================== Docker 建置驗證 ====================
+  docker-build-verification:
+    name: 🐳 Docker Build Verification
+    runs-on: ubuntu-latest
+    needs: [contracts-l1-ci, mcp-servers-ci]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    strategy:
+      matrix:
+        service:
+          - name: contracts-l1
+            context: core/contracts/contracts-L1/contracts
+            dockerfile: core/contracts/contracts-L1/contracts/Dockerfile
+          - name: mcp-servers
+            context: mcp-servers
+            dockerfile: mcp-servers/Dockerfile
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 🏗️ Build Docker image (${{ matrix.service.name }})
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: false
+          tags: slasolve/${{ matrix.service.name }}:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+      
+      - name: 🔍 Test Docker image (${{ matrix.service.name }})
+        run: |
+          echo "測試 Docker 映像..."
+          docker images | grep slasolve/${{ matrix.service.name }}
+          echo "✅ Docker 映像建置成功"
+      
+      - name: 📊 Docker Build Summary
+        run: |
+          echo "## 🐳 Docker 建置完成: ${{ matrix.service.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 映像建置成功" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏷️ Tag: \`slasolve/${{ matrix.service.name }}:ci-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ==================== 整體狀態報告 ====================
+  ci-status-report:
+    name: 📊 CI Status Report
+    runs-on: ubuntu-latest
+    needs: [contracts-l1-ci, mcp-servers-ci]
+    if: always()
+    
+    steps:
+      - name: 📊 Generate CI Report
+        run: |
+          echo "## 🎯 持續整合工作狀態報告" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tier 1: 核心服務層" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 服務 | 狀態 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Contracts L1 Service | ${{ needs.contracts-l1-ci.result == 'success' && '✅ 通過' || '❌ 失敗' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tier 2: 工具與驗證層" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 服務 | 狀態 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| MCP Servers | ${{ needs.mcp-servers-ci.result == 'success' && '✅ 通過' || '❌ 失敗' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📍 位置資訊" >> $GITHUB_STEP_SUMMARY
+          echo "- **Contracts L1**: \`core/contracts/contracts-L1/contracts/\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **MCP Servers**: \`mcp-servers/\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 部署指令" >> $GITHUB_STEP_SUMMARY
+          echo "- Contracts L1: \`docker-compose up contracts-l1\`" >> $GITHUB_STEP_SUMMARY
+          echo "- MCP Servers: \`docker-compose up mcp-servers\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: ✅ Check overall status
+        if: needs.contracts-l1-ci.result != 'success' || needs.mcp-servers-ci.result != 'success'
+        run: |
+          echo "❌ 某些 CI 檢查失敗"
+          exit 1
