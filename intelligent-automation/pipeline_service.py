@@ -39,7 +39,7 @@ except Exception as e:
 
 # Import agents
 try:
-    from agents.task_executor import task_executor, TaskExecutor
+    from agents.task_executor import task_executor
     from agents.recognition_server import RecognitionServer
     from agents.visualization_agent import VisualizationAgent
 except ImportError:
