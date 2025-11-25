@@ -7,6 +7,8 @@ queries:
     uses: security-extended
   - name: security-and-quality
     uses: security-and-quality
+  - name: custom-enterprise-queries
+    uses: .github/codeql/custom-queries
 
 paths-ignore:
   - "node_modules"
