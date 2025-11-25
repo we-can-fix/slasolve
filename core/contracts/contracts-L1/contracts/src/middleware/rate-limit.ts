@@ -134,11 +134,17 @@ export function createRateLimiter(
   const finalConfig = { ...defaultConfig, ...config };
   const rateLimitStore = store || new MemoryStore();
   
-  // 定期清理內存存儲
+  // 定期清理內存存儲 (使用弱引用避免記憶體洩漏)
+  let cleanupInterval: NodeJS.Timeout | null = null;
   if (rateLimitStore instanceof MemoryStore) {
-    setInterval(() => {
+    cleanupInterval = setInterval(() => {
       rateLimitStore.cleanup();
     }, 60 * 1000); // 每分鐘清理一次
+    
+    // 允許 Node.js 進程退出時清理
+    if (cleanupInterval.unref) {
+      cleanupInterval.unref();
+    }
   }
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

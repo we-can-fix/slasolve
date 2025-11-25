@@ -134,11 +134,23 @@ backup_database() {
     if [ -n "${POSTGRES_HOST:-}" ]; then
         local db_file="$backup_path/database/postgres_${TIMESTAMP}.sql.gz"
         
-        PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
-            -h "${POSTGRES_HOST}" \
-            -U "${POSTGRES_USER}" \
-            -d "${POSTGRES_DB}" \
-            | gzip > "$db_file"
+        # 使用 .pgpass 文件以提高安全性
+        # 格式: hostname:port:database:username:password
+        if [ -f "$HOME/.pgpass" ]; then
+            pg_dump \
+                -h "${POSTGRES_HOST}" \
+                -U "${POSTGRES_USER}" \
+                -d "${POSTGRES_DB}" \
+                | gzip > "$db_file"
+        else
+            # 後備方案，但會有安全警告
+            warning "建議使用 .pgpass 文件以提高安全性"
+            PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
+                -h "${POSTGRES_HOST}" \
+                -U "${POSTGRES_USER}" \
+                -d "${POSTGRES_DB}" \
+                | gzip > "$db_file"
+        fi
         
         log "  ✓ PostgreSQL 備份完成"
     fi

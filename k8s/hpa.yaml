@@ -110,6 +110,9 @@ spec:
 # ============================================================================
 # Vertical Pod Autoscaler (VPA) - 可選
 # ============================================================================
+# 注意: VPA 與 HPA 不應同時用於相同的指標 (CPU/Memory)
+# 建議: 僅在不使用 HPA 時啟用 VPA，或將 VPA 設為 "Off" 或 "Initial" 模式
+# ============================================================================
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -121,7 +124,7 @@ spec:
     kind: Deployment
     name: contracts-l1
   updatePolicy:
-    updateMode: "Auto"    # 自動更新資源請求
+    updateMode: "Off"    # 設為 "Off" 僅提供建議，避免與 HPA 衝突
   resourcePolicy:
     containerPolicies:
       - containerName: contracts-l1

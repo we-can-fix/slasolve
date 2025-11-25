@@ -15,7 +15,7 @@ import logging
 from typing import Dict, List, Any, Optional, Set, Tuple
 from dataclasses import dataclass, asdict, field
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
@@ -88,7 +88,7 @@ class CodeIssue:
     repair_difficulty: str = "MEDIUM"  # EASY, MEDIUM, HARD
     estimated_repair_time: int = 0  # 秒
     related_issues: List[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     @property
     def severity_score(self) -> float:
@@ -110,7 +110,7 @@ class AnalysisResult:
     repository: str = ""
     commit_hash: str = ""
     branch: str = "main"
-    analysis_timestamp: datetime = field(default_factory=datetime.utcnow)
+    analysis_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     duration: float = 0.0
     strategy: AnalysisStrategy = AnalysisStrategy.STANDARD
     issues: List[CodeIssue] = field(default_factory=list)

@@ -325,6 +325,9 @@ async function runPhase(duration, rps, target, result) {
     // 發送請求
     makeRequest(target.host, target.port, target.path).then((res) => {
       result.addRequest(res);
+    }).catch((err) => {
+      console.error('Request failed:', err);
+      result.addRequest({ success: false, duration: 0, error: err.message, timestamp: Date.now() });
     });
     
     requestCount++;
@@ -362,7 +365,13 @@ async function runRamp(duration, startRps, endRps, target, result) {
     }
     
     process.stdout.write(`\r    進度: ${step + 1}/${steps} 步 (${currentRps.toFixed(1)} RPS)`);
-    await new Promise((resolve) => setTimeout(resolve, stepDuration - (stepDuration * requestsThisSecond / requestsThisSecond)));
+    
+    // 計算實際已用時間並等待剩餘時間
+    const timeSpent = requestsThisSecond > 0 ? (stepDuration / requestsThisSecond) * requestsThisSecond : 0;
+    const remainingTime = Math.max(0, stepDuration - timeSpent);
+    if (remainingTime > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remainingTime));
+    }
   }
   
   console.log(`\r    完成: ${steps}/${steps} 步`);
