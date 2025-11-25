@@ -126,12 +126,10 @@ jobs:
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: mcp-servers/package-lock.json
       
       - name: 📦 Install dependencies
         working-directory: mcp-servers
-        run: npm ci
+        run: npm install
       
       - name: 🎨 Lint code
         working-directory: mcp-servers
