@@ -376,7 +376,7 @@ jobs:
       - name: 🔍 Docker Compose validation
         run: |
           echo "🔍 驗證 Docker Compose 配置..."
-          docker-compose config --quiet
+          docker compose config --quiet
           echo "✅ Docker Compose 配置有效"
       
       - name: ✅ Docker 整合完成
