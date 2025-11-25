@@ -41,14 +41,12 @@ export class ProvenanceController {
 
       res.status(201).json({
         success: true,
-        data: {
-          attestation,
-          export: this.provenanceService.exportAttestation(attestation)
-        },
+        data: attestation,
         message: 'Build attestation created successfully'
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('ENOENT')) {
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code === 'ENOENT') {
         res.status(404).json({
           success: false,
           error: 'File not found',
@@ -74,7 +72,7 @@ export class ProvenanceController {
       if (!attestation) {
         res.status(400).json({
           success: false,
-          error: 'Attestation data is required',
+          error: 'attestation is required',
           timestamp: new Date().toISOString()
         });
         return;
@@ -108,9 +106,9 @@ export class ProvenanceController {
       const filePath = req.params.filePath || req.params[0]; // 支援通配符路由
 
       if (!filePath) {
-        res.status(400).json({
+        res.status(404).json({
           success: false,
-          error: 'File path is required',
+          error: 'filePath is required',
           timestamp: new Date().toISOString()
         });
         return;
@@ -130,7 +128,8 @@ export class ProvenanceController {
         message: 'File digest generated successfully'
       });
     } catch (error) {
-      if (error instanceof Error && error.message.includes('ENOENT')) {
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code === 'ENOENT') {
         res.status(404).json({
           success: false,
           error: 'File not found',
@@ -156,22 +155,17 @@ export class ProvenanceController {
       if (!attestationJson) {
         res.status(400).json({
           success: false,
-          error: 'Attestation JSON data is required',
+          error: 'attestationJson is required',
           timestamp: new Date().toISOString()
         });
         return;
       }
 
       const attestation = this.provenanceService.importAttestation(attestationJson);
-      const isValid = await this.provenanceService.verifyAttestation(attestation);
 
       res.json({
         success: true,
-        data: {
-          attestation,
-          valid: isValid,
-          timestamp: new Date().toISOString()
-        },
+        data: attestation,
         message: 'Attestation imported successfully'
       });
     } catch (error) {

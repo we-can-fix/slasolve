@@ -11,7 +11,6 @@
 
 import { readdir, readFile } from 'fs/promises';
 import { resolve, extname } from 'path';
-import { fileURLToPath } from 'url';
 import { DeploymentValidator } from './deployment-validator.js';
 import { LogicValidator } from './logic-validator.js';
 
@@ -351,11 +350,9 @@ async function main() {
 }
 
 // Run if executed directly
-
-  main().catch((error) => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
-}
+main().catch((error) => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});
 
 export { ComprehensiveValidator };

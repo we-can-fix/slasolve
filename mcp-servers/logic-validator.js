@@ -10,8 +10,6 @@
  */
 
 import { createHash } from 'crypto';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
 
 /**
  * Logic validation engine
@@ -462,7 +460,7 @@ class LogicValidator {
 /**
  * Main execution
  */
-async function main() {
+function main() {
   const validator = new LogicValidator();
   
   // Example usage
@@ -499,11 +497,11 @@ async function main() {
 }
 
 // Run if executed directly
-
-  main().catch((error) => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
+try {
+  main();
+} catch (error) {
+  console.error('Fatal error:', error);
+  process.exit(1);
 }
 
 export { LogicValidator };
