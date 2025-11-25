@@ -29,17 +29,11 @@ COPY --chown=nodejs:nodejs tsconfig.json ./
 # 複製原始碼
 COPY --chown=nodejs:nodejs src ./src
 
-# 安裝依賴並構建（作為 root，合併為單一步驟以避免層遺失問題）
-# 建議：如 npm ci 在 Docker 環境有已知問題，請於此註解說明並追蹤正確解法
+# 以非 root 使用者安裝依賴並構建，符合最小權限原則
+USER nodejs
 RUN npm ci && \
     npm cache clean --force && \
-    chown -R nodejs:nodejs /app/node_modules && \
-    npm run build && \
-    chown -R nodejs:nodejs /app/dist
-
-# 切換到非 root 使用者
-USER nodejs
-
+    npm run build
 # 直接以 nodejs 使用者執行清理，符合最小權限原則
 # 移除 devDependencies (在 runner 階段不再需要，因為已經構建完成)
 # RUN npm prune --production
