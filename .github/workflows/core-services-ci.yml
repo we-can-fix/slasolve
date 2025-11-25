@@ -146,10 +146,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       
       - name: 🔧 Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@c8b6e5e6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2 # v3.3.0
       
       - name: 🏗️ Build Docker image (${{ matrix.service.name }})
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@e7b6e5e6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2 # v6.1.0
         with:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
