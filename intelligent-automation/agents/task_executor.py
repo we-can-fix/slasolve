@@ -12,7 +12,6 @@ Core capabilities extracted from OJ-agent for autonomous systems:
 Adapted for: Drone/Autonomous Vehicle/Automated Iteration Systems
 """
 
-import os
 import json
 import logging
 import asyncio
