@@ -433,25 +433,49 @@ class DocGenerator {
 }
 
 /**
- * Initialize and start the MCP server
+ * Handle tool execution requests
  */
-async function main() {
-  const generator = new DocGenerator();
-  const server = new Server(
-    {
-      name: 'doc-generator',
-      version: '1.0.0',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
+function handleToolCall(generator, name, args) {
+  switch (name) {
+        case 'generate-jsdoc': {
+          const validated = GenerateJSDocSchema.parse(args);
+          const result = generator.generateJSDoc(validated.code, validated.style);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: [
-      {
+        case 'generate-api-docs': {
+          const validated = GenerateAPIDocsSchema.parse(args);
+          const result = generator.generateAPIDocs(validated.endpoints, validated.format);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case 'generate-guides': {
+          const validated = GenerateGuidesSchema.parse(args);
+          const result = generator.generateGuides(
+            validated.topic,
+            validated.sections,
+            validated.audience
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        default:
+          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+      }
+}
+
+/**
+ * Get tool definitions for the doc generator
+ */
+function getToolDefinitions() {
+  return [
+{
         name: 'generate-jsdoc',
         description: 'Generate JSDoc documentation for functions and classes',
         inputSchema: {
@@ -514,45 +538,35 @@ async function main() {
           required: ['topic']
         }
       }
-    ]
+  ];
+}
+
+/**
+ * Initialize and start the MCP server
+ */
+async function main() {
+  const generator = new DocGenerator();
+  const server = new Server(
+    {
+      name: 'doc-generator',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: getToolDefinitions()
   }));
 
   server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
-      switch (name) {
-        case 'generate-jsdoc': {
-          const validated = GenerateJSDocSchema.parse(args);
-          const result = generator.generateJSDoc(validated.code, validated.style);
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'generate-api-docs': {
-          const validated = GenerateAPIDocsSchema.parse(args);
-          const result = generator.generateAPIDocs(validated.endpoints, validated.format);
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'generate-guides': {
-          const validated = GenerateGuidesSchema.parse(args);
-          const result = generator.generateGuides(
-            validated.topic,
-            validated.sections,
-            validated.audience
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        default:
-          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-      }
+      return handleToolCall(generator, name, args);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(

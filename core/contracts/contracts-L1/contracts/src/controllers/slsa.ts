@@ -110,7 +110,7 @@ export class SLSAController {
           valid: isValid,
           timestamp: new Date().toISOString(),
           provenanceType: typeof provenance === 'object' && provenance !== null && 
-            'predicateType' in provenance ? (provenance as any).predicateType : 'unknown'
+            'predicateType' in provenance ? (provenance as { predicateType: string }).predicateType : 'unknown'
         },
         message: isValid ? 'SLSA attestation is valid' : 'SLSA attestation is invalid'
       });
@@ -238,7 +238,7 @@ export class SLSAController {
         valid: isValid,
         type: provenance.predicateType || 'unknown',
         subjects: provenance.subject?.length || 0,
-        subjectNames: provenance.subject?.map((s: any) => s.name) || [],
+        subjectNames: provenance.subject?.map((s: { name?: string }) => s.name) || [],
         buildType: provenance.predicate?.buildDefinition?.buildType || 'unknown',
         builder: provenance.predicate?.runDetails?.builder?.id || 'unknown',
         timestamp: provenance.predicate?.runDetails?.metadata?.startedOn || 'unknown',

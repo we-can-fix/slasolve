@@ -17,26 +17,26 @@ RUN apt-get update && \
 # 設定工作目錄
 WORKDIR /app
 
+# 確保 /app 目錄和 nodejs 家目錄屬於 nodejs 使用者
+RUN chown -R nodejs:nodejs /app && \
+    mkdir -p /home/nodejs && \
+    chown -R nodejs:nodejs /home/nodejs
+
 # 複製套件定義檔（利用 Docker layer cache）
 COPY --chown=nodejs:nodejs package*.json ./
 COPY --chown=nodejs:nodejs tsconfig.json ./
 
-# 切換到非 root 使用者進行構建
-USER nodejs
-
-# 安裝依賴（包含 devDependencies 用於構建）
-RUN npm ci && \
-    npm cache clean --force
-
 # 複製原始碼
 COPY --chown=nodejs:nodejs src ./src
 
-# 構建 TypeScript
-RUN npm run build
-
+# 以非 root 使用者安裝依賴並構建，符合最小權限原則
+USER nodejs
+RUN npm ci && \
+    npm cache clean --force && \
+    npm run build
 # 直接以 nodejs 使用者執行清理，符合最小權限原則
-# 移除 devDependencies
-RUN npm prune --production
+# 移除 devDependencies (在 runner 階段不再需要，因為已經構建完成)
+# RUN npm prune --production
 
 # Stage 2: Runner (最小生產映像)
 FROM node:18-slim AS runner

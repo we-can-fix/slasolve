@@ -519,26 +519,73 @@ ${suite.tests.map(t => '  ' + t.code).join('\n\n')}
 }
 
 /**
- * Initialize and start the MCP server
+ * Handle tool execution requests
  */
-async function main() {
-  const generator = new TestGenerator();
-  const server = new Server(
-    {
-      name: 'test-generator',
-      version: '1.0.0',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
+function handleToolCall(generator, name, args) {
+  switch (name) {
+        case 'generate-unit-tests': {
+          const validated = GenerateUnitTestsSchema.parse(args);
+          const result = generator.generateUnitTests(
+            validated.code,
+            validated._framework,
+            validated.coverage
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
 
-  // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: [
-      {
+        case 'generate-integration-tests': {
+          const validated = GenerateIntegrationTestsSchema.parse(args);
+          const result = generator.generateIntegrationTests(
+            validated.endpoints,
+            validated._framework
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
+
+        case 'generate-e2e-tests': {
+          const validated = GenerateE2ETestsSchema.parse(args);
+          const result = generator.generateE2ETests(
+            validated.scenarios,
+            validated._framework
+          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          };
+        }
+
+        default:
+          throw new McpError(
+            ErrorCode.MethodNotFound,
+            `Unknown tool: ${name}`
+          );
+      }
+}
+
+/**
+ * Get tool definitions for the test generator
+ */
+function getToolDefinitions() {
+  return [
+{
         name: 'generate-unit-tests',
         description: 'Generate comprehensive unit tests for functions and classes',
         inputSchema: {
@@ -628,7 +675,29 @@ async function main() {
           required: ['scenarios']
         }
       }
-    ]
+  ];
+}
+
+/**
+ * Initialize and start the MCP server
+ */
+async function main() {
+  const generator = new TestGenerator();
+  const server = new Server(
+    {
+      name: 'test-generator',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  // List available tools
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: getToolDefinitions()
   }));
 
   // Handle tool calls
@@ -636,62 +705,7 @@ async function main() {
     const { name, arguments: args } = request.params;
 
     try {
-      switch (name) {
-        case 'generate-unit-tests': {
-          const validated = GenerateUnitTestsSchema.parse(args);
-          const result = generator.generateUnitTests(
-            validated.code,
-            validated._framework,
-            validated.coverage
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
-            ]
-          };
-        }
-
-        case 'generate-integration-tests': {
-          const validated = GenerateIntegrationTestsSchema.parse(args);
-          const result = generator.generateIntegrationTests(
-            validated.endpoints,
-            validated._framework
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
-            ]
-          };
-        }
-
-        case 'generate-e2e-tests': {
-          const validated = GenerateE2ETestsSchema.parse(args);
-          const result = generator.generateE2ETests(
-            validated.scenarios,
-            validated._framework
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
-            ]
-          };
-        }
-
-        default:
-          throw new McpError(
-            ErrorCode.MethodNotFound,
-            `Unknown tool: ${name}`
-          );
-      }
+      return handleToolCall(generator, name, args);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(

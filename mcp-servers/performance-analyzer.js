@@ -643,25 +643,55 @@ startLine = i + 1;
 }
 
 /**
- * Initialize and start the MCP server
+ * Handle tool execution requests
  */
-async function main() {
-  const analyzer = new PerformanceAnalyzer();
-  const server = new Server(
-    {
-      name: 'performance-analyzer',
-      version: '1.0.0',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
+function handleToolCall(analyzer, name, args) {
+  switch (name) {
+        case 'analyze-performance': {
+          const validated = AnalyzePerformanceSchema.parse(args);
+          const result = analyzer.analyzePerformance(
+            validated.code,
+            validated.language,
+            validated.metrics
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-  server.setRequestHandler(ListToolsRequestSchema, () => ({
-    tools: [
-      {
+        case 'identify-bottlenecks': {
+          const validated = IdentifyBottlenecksSchema.parse(args);
+          const result = analyzer.identifyBottlenecks(
+            validated.code,
+            validated.threshold
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case 'suggest-optimizations': {
+          const validated = SuggestOptimizationsSchema.parse(args);
+          const result = analyzer.suggestOptimizations(
+            validated.code,
+            validated.focus
+          );
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        default:
+          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+      }
+}
+
+/**
+ * Get tool definitions for the performance analyzer
+ */
+function getToolDefinitions() {
+  return [
+{
         name: 'analyze-performance',
         description: 'Analyze code performance metrics',
         inputSchema: {
@@ -719,51 +749,35 @@ async function main() {
           required: ['code']
         }
       }
-    ]
+  ];
+}
+
+/**
+ * Initialize and start the MCP server
+ */
+async function main() {
+  const analyzer = new PerformanceAnalyzer();
+  const server = new Server(
+    {
+      name: 'performance-analyzer',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: getToolDefinitions()
   }));
 
   server.setRequestHandler(CallToolRequestSchema, (request) => {
     const { name, arguments: args } = request.params;
 
     try {
-      switch (name) {
-        case 'analyze-performance': {
-          const validated = AnalyzePerformanceSchema.parse(args);
-          const result = analyzer.analyzePerformance(
-            validated.code,
-            validated.language,
-            validated.metrics
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'identify-bottlenecks': {
-          const validated = IdentifyBottlenecksSchema.parse(args);
-          const result = analyzer.identifyBottlenecks(
-            validated.code,
-            validated.threshold
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        case 'suggest-optimizations': {
-          const validated = SuggestOptimizationsSchema.parse(args);
-          const result = analyzer.suggestOptimizations(
-            validated.code,
-            validated.focus
-          );
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
-          };
-        }
-
-        default:
-          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-      }
+      return handleToolCall(analyzer, name, args);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(

@@ -40,7 +40,7 @@ export const createError = {
 };
 
 export const errorMiddleware = (err: Error | AppError, req: Request, res: Response, _next: NextFunction): void => {
-  const traceId = (req as any).traceId || randomUUID();
+  const traceId = req.traceId || randomUUID();
   let logLevel: 'error' | 'warn' = 'error';
 
   if (err instanceof AppError) {
@@ -84,7 +84,7 @@ export const errorMiddleware = (err: Error | AppError, req: Request, res: Respon
 
 export const notFoundMiddleware = (req: Request, res: Response, _next: NextFunction): void => {
   const error = createError.notFound(`Route ${req.method} ${req.url}`);
-  const traceId = (req as any).traceId || randomUUID();
+  const traceId = req.traceId || randomUUID();
 
   res.status(404).json({
     error: { code: error.code, message: error.message, traceId, timestamp: new Date().toISOString() }
