@@ -46,7 +46,7 @@ export class ProvenanceController {
       });
     } catch (error) {
       const nodeError = error as NodeJS.ErrnoException;
-      if (nodeError.code === 'ENOENT' || (error instanceof Error && error.message.includes('ENOENT'))) {
+      if (nodeError.code === 'ENOENT') {
         res.status(404).json({
           success: false,
           error: 'File not found',
@@ -129,7 +129,7 @@ export class ProvenanceController {
       });
     } catch (error) {
       const nodeError = error as NodeJS.ErrnoException;
-      if (nodeError.code === 'ENOENT' || (error instanceof Error && error.message.includes('ENOENT'))) {
+      if (nodeError.code === 'ENOENT') {
         res.status(404).json({
           success: false,
           error: 'File not found',
