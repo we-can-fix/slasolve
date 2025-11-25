@@ -557,10 +557,10 @@ async def main():
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
-    config = {
-        'enabled': True,
-        'parallel_analysis': True
-    }
+    
+    
+    
+    
     
     print("代碼分析引擎已初始化")
 
