@@ -706,7 +706,6 @@ async function main() {
 
     try {
       return handleToolCall(generator, name, args);
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new McpError(

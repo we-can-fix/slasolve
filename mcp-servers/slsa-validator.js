@@ -497,7 +497,7 @@ function handleToolCall(validator, name, args) {
 }
 
 /**
- * Get tool definitions for the slsavalidator
+ * Get tool definitions for the slsa validator
  */
 function getToolDefinitions() {
   return [

@@ -471,7 +471,7 @@ function handleToolCall(generator, name, args) {
 }
 
 /**
- * Get tool definitions for the docgenerator
+ * Get tool definitions for the doc generator
  */
 function getToolDefinitions() {
   return [

@@ -687,7 +687,7 @@ function handleToolCall(analyzer, name, args) {
 }
 
 /**
- * Get tool definitions for the performanceanalyzer
+ * Get tool definitions for the performance analyzer
  */
 function getToolDefinitions() {
   return [
