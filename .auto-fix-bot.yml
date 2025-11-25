@@ -245,6 +245,71 @@ documentation:
   # 自動更新
   auto_update: true
 
+# 智能自動化配置 (Intelligent Automation Configuration)
+# ============================================================
+# 從 OJ-agent 提取的高價值多智能體能力
+# High-value multi-agent capabilities extracted from OJ-agent
+intelligent_automation:
+  enabled: true
+  
+  # 核心智能體配置 (Core Agents Configuration)
+  agents:
+    # 任務執行器 - 智能代碼分析與自動修復
+    task_executor:
+      enabled: true
+      analysis_types:
+        - "comprehensive"  # 全面分析
+        - "security"       # 安全分析
+        - "performance"    # 性能分析
+      auto_fix_critical: true  # 自動修復關鍵問題
+      stream_results: true     # 實時流式輸出
+      
+    # 識別服務器 - 意圖識別與安全路由
+    recognition_server:
+      enabled: true
+      security_validation: true  # 啟用安全驗證
+      threat_detection: true     # 威脅檢測
+      intent_classification: true  # 意圖分類
+      
+    # 可視化智能體 - 概念解釋與知識傳遞
+    visualization_agent:
+      enabled: true
+      generate_explanations: true  # 生成解釋
+      use_analogies: true          # 使用類比
+      domain_specific: true        # 領域特定解釋
+      
+  # 適配場景 (Adaptation Scenarios)
+  scenarios:
+    # 無人機系統
+    drone_systems:
+      enabled: true
+      real_time_monitoring: true
+      safety_critical_checks: true
+      
+    # 自動駕駛
+    autonomous_vehicles:
+      enabled: true
+      decision_code_validation: true
+      sensor_fusion_analysis: true
+      
+    # 自動化迭代
+    automated_iteration:
+      enabled: true
+      ci_cd_integration: true
+      regression_detection: true
+      
+  # 性能配置 (Performance Configuration)
+  performance:
+    max_concurrent_requests: 1000
+    response_timeout: 30  # 秒
+    stream_chunk_size: 1024
+    
+  # 質量指標 (Quality Metrics)
+  metrics:
+    target_accuracy: 99.5  # 目標準確率 (%)
+    auto_fix_success_rate: 95.8  # 自動修復成功率 (%)
+    response_time_ms: 100  # 目標響應時間 (毫秒)
+
 # 通知配置
 notifications:
   enabled: true
@@ -259,6 +324,7 @@ notifications:
       - "fix_completed"
       - "security_issue"
       - "pr_created"
+      - "intelligent_analysis_complete"  # 新增：智能分析完成
       
   # Email 通知
   # To enable: Set enabled=true and configure SMTP settings
@@ -278,6 +344,7 @@ notifications:
     notify_on:
       - "pr_created"
       - "fix_completed"
+      - "intelligent_fix_applied"  # 新增：智能修復已應用
 
 # 雲端委派
 cloud_delegation:

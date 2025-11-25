@@ -47,6 +47,63 @@
 └─────────────────┘
 ```
 
+## 🧠 智能自動化代理 (Intelligent Automation Agents)
+
+### 新增：多智能體系統
+
+**從 OJ-agent 提取的高價值能力**，專為無人機/自動駕駛/自動化迭代系統設計：
+
+#### 1. TaskExecutor（任務執行器）
+- **功能**: 智能代碼分析與自動修復
+- **適用場景**: 安全關鍵系統代碼審查、實時錯誤檢測
+- **特性**:
+  - 實時流式分析輸出
+  - 自動修復關鍵安全漏洞
+  - 性能瓶頸檢測
+  - 支持多種分析類型（comprehensive, security, performance）
+
+#### 2. RecognitionServer（識別服務器）
+- **功能**: 意圖識別與智能路由
+- **適用場景**: 請求分類、安全驗證、任務分發
+- **特性**:
+  - 安全威脅檢測
+  - 智能意圖分類
+  - 上下文感知路由
+  - 多維度請求分析
+
+#### 3. VisualizationAgent（可視化智能體）
+- **功能**: 概念解釋與知識傳遞
+- **適用場景**: 算法解釋、調試輔助、團隊培訓
+- **特性**:
+  - 使用類比和隱喻解釋
+  - 領域特定知識
+  - 實時流式解釋
+  - 自動生成後續問題
+
+### 智能代理委派流程
+
+```yaml
+intelligent_automation_task:
+  type: "multi-agent-analysis"
+  agents:
+    - name: "recognition"
+      action: "analyze-intent"
+      timeout: 5
+      
+    - name: "task-executor"
+      action: "analyze-code"
+      depends_on: "recognition"
+      parameters:
+        analysis_type: "comprehensive"
+        auto_fix: true
+      timeout: 30
+      
+    - name: "visualization"
+      action: "explain-results"
+      depends_on: "task-executor"
+      timeout: 10
+```
+
 ## 📋 任務類型與委派策略
 
 ### 1. 代碼分析任務
@@ -54,7 +111,7 @@
 **任務描述**：深度分析代碼庫，識別潛在問題
 
 **委派策略**：
-- **優先提供商**: AWS Lambda（高性能計算）
+- **優先提供商**: 智能自動化系統 (Intelligent Automation) → AWS Lambda（高性能計算）
 - **並行度**: 中等（10個並行任務）
 - **優先級**: 高
 - **超時**: 180秒
@@ -68,13 +125,21 @@ steps:
     parameters:
       repo_url: "${REPO_URL}"
       branch: "${BRANCH}"
+  
+  - name: "智能意圖識別"
+    action: "recognize-intent"
+    delegate_to: "intelligent-automation/recognition-server"
+    timeout: 5
       
-  - name: "分析代碼"
+  - name: "智能代碼分析"
     action: "analyze"
-    delegate_to: "aws-lambda"
+    delegate_to: "intelligent-automation/task-executor"
     parameters:
       language: "auto-detect"
+      analysis_type: "comprehensive"
       rules: ["complexity", "security", "style"]
+      auto_fix_critical: true
+    timeout: 30
       
   - name: "生成報告"
     action: "generate-report"
