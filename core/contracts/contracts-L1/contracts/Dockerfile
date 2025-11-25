@@ -30,20 +30,11 @@ COPY --chown=nodejs:nodejs tsconfig.json ./
 COPY --chown=nodejs:nodejs src ./src
 
 # 安裝依賴並構建（作為 root，合併為單一步驟以避免層遺失問題）
-# npm ci 在 Docker 環境可能會報告錯誤但實際成功安裝套件
-RUN set +e && \
-    npm ci && \
-    NPM_EXIT_CODE=$? && \
-    set -e && \
-    echo "npm ci exit code: $NPM_EXIT_CODE" && \
-    if [ ! -d "node_modules" ]; then echo "ERROR: node_modules 不存在！" && exit 1; fi && \
-    echo "node_modules 存在，檢查內容..." && \
-    ls -la node_modules/.bin/ | head -30 && \
-    ls -la node_modules/ | grep typescript && \
-    echo "嘗試使用 npx typescript..." && \
-    npm cache clean --force || true && \
+# 建議：如 npm ci 在 Docker 環境有已知問題，請於此註解說明並追蹤正確解法
+RUN npm ci && \
+    npm cache clean --force && \
     chown -R nodejs:nodejs /app/node_modules && \
-    npx -y typescript@5.3.2 || (echo "使用已安裝的 typescript" && ./node_modules/typescript/bin/tsc) && \
+    npm run build && \
     chown -R nodejs:nodejs /app/dist
 
 # 切換到非 root 使用者
