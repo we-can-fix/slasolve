@@ -54,9 +54,8 @@ jobs:
       - name: 🔍 Type check
         run: npm run typecheck
       
-      - name: 🎨 Lint code (允許警告)
-        run: npm run lint || echo "⚠️ Lint 警告存在但不阻斷建置"
-        continue-on-error: true
+      - name: 🎨 Lint code
+        run: npm run lint
       
       - name: 🧪 Run tests
         run: npm test -- --ci --coverage
@@ -102,17 +101,15 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci
       
-      - name: 🎨 Lint code (允許警告)
-        run: npm run lint || echo "⚠️ Lint 警告存在但不阻斷建置"
+      - name: 🎨 Lint code (允許最多5個警告)
+        run: npm run lint || test $? -eq 1
         continue-on-error: true
       
       - name: 🔍 Validate deployment
-        run: npm run validate:deployment || echo "⚠️ 部署驗證警告"
-        continue-on-error: true
+        run: npm run validate:deployment
       
       - name: 🔍 Validate logic
-        run: npm run validate:logic || echo "⚠️ 邏輯驗證警告"
-        continue-on-error: true
+        run: npm run validate:logic
       
       - name: ✅ CI Summary
         run: |
