@@ -670,17 +670,17 @@ if __name__ == "__main__":
             sys.exit(0)
         
         # Upgrade from config
-        results = upgrader.upgrade_from_config(config_path, parallel=args.parallel)
+        upgrader.upgrade_from_config(config_path, parallel=args.parallel)
     elif args.upgrade_all:
         # Upgrade all optional dependencies
-        results = upgrader.upgrade_all_optional()
+        upgrader.upgrade_all_optional()
     elif args.deps:
         # Upgrade specific dependencies
-        results = upgrader.check_and_upgrade(args.deps)
+        upgrader.check_and_upgrade(args.deps)
     else:
         # Check core dependencies
         core_deps = ['dotenv', 'loguru']
-        results = upgrader.check_and_upgrade(core_deps)
+        upgrader.check_and_upgrade(core_deps)
     
     # Print summary
     print(upgrader.get_summary())
