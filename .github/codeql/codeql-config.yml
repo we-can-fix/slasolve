@@ -8,7 +8,7 @@ queries:
   - name: security-and-quality
     uses: security-and-quality
   - name: custom-enterprise-queries
-    uses: ./.github/codeql/custom-queries
+    uses: .github/codeql/custom-queries
 
 paths-ignore:
   - "node_modules"
@@ -26,14 +26,6 @@ paths-ignore:
   - "**/.vscode/**"
   - "**/.github/**"
 
-paths:
-  - "src"
-  - "lib"
-  - "app"
-  - "core"
-  - "mcp-servers"
-  - "advanced-system-src"
-
 packs:
   javascript:
     - codeql/javascript-queries:AlertSuppression.ql
@@ -43,11 +35,3 @@ packs:
     - codeql/python-queries:Security/CWE-089
     - codeql/python-queries:Security/CWE-798
     - codeql/python-queries:Security/CWE-079
-  java:
-    - codeql/java-queries:Security/CWE
-  csharp:
-    - codeql/csharp-queries:Security/CWE
-  cpp:
-    - codeql/cpp-queries:Security/CWE
-  go:
-    - codeql/go-queries:Security/CWE

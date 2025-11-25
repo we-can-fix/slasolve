@@ -5,4 +5,3 @@ library: false
 dependencies:
   codeql/javascript-all: "*"
   codeql/python-all: "*"
-  codeql/java-all: "*"
