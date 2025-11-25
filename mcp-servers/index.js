@@ -145,21 +145,21 @@ function createHealthCheckServer() {
 /**
  * 主函數 - 初始化並啟動 MCP 服務器
  */
-async function main() {
-  console.log('🚀 Starting MCP Servers...');
-  console.log(`📦 Version: 1.0.0`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔧 Node.js: ${process.version}`);
+function main() {
+  console.info('🚀 Starting MCP Servers...');
+  console.info(`📦 Version: 1.0.0`);
+  console.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.info(`🔧 Node.js: ${process.version}`);
 
   // 創建並啟動 HTTP 健康檢查服務器
   const healthServer = createHealthCheckServer();
   
   // 優雅關閉處理 - 在伺服器創建後註冊
   const gracefulShutdown = async (signal) => {
-    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+    console.info(`\n🛑 Received ${signal}, shutting down gracefully...`);
     await new Promise((resolve) => {
       healthServer.close(() => {
-        console.log('✅ HTTP server closed');
+        console.info('✅ HTTP server closed');
         resolve();
       });
     });
@@ -171,22 +171,24 @@ async function main() {
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
   healthServer.listen(SERVER_PORT, SERVER_HOST, () => {
-    console.log(`✅ Health check server listening on http://${SERVER_HOST}:${SERVER_PORT}`);
-    console.log(`📊 Health endpoint: http://${SERVER_HOST}:${SERVER_PORT}/health`);
-    console.log(`🔍 Status endpoint: http://${SERVER_HOST}:${SERVER_PORT}/status`);
-    console.log(`📝 Version endpoint: http://${SERVER_HOST}:${SERVER_PORT}/version`);
-    console.log('');
-    console.log('🎯 Available MCP Services:');
+    console.info(`✅ Health check server listening on http://${SERVER_HOST}:${SERVER_PORT}`);
+    console.info(`📊 Health endpoint: http://${SERVER_HOST}:${SERVER_PORT}/health`);
+    console.info(`🔍 Status endpoint: http://${SERVER_HOST}:${SERVER_PORT}/status`);
+    console.info(`📝 Version endpoint: http://${SERVER_HOST}:${SERVER_PORT}/version`);
+    console.info('');
+    console.info('🎯 Available MCP Services:');
     MCP_SERVICE_FILES.forEach((file, index) => {
-      console.log(`  - ${MCP_SERVICES[index]} (${file})`);
+      console.info(`  - ${MCP_SERVICES[index]} (${file})`);
     });
-    console.log('');
-    console.log('✨ MCP Servers are ready!');
+    console.info('');
+    console.info('✨ MCP Servers are ready!');
   });
 }
 
 // 啟動服務器
-main().catch((error) => {
+try {
+  main();
+} catch (error) {
   console.error('❌ Failed to start MCP Servers:', error);
   process.exit(1);
-});
+}
