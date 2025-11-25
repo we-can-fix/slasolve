@@ -23,7 +23,7 @@ COPY --chown=nodejs:nodejs package*.json ./
 USER nodejs
 
 # 安裝依賴
-RUN npm ci && \
+RUN npm install && \
     npm cache clean --force
 
 # 複製原始碼
