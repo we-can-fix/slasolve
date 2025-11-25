@@ -14,14 +14,14 @@ Adapted for: Safety-critical autonomous systems requiring intelligent dispatch
 import json
 import logging
 from typing import Optional, Dict, Any, AsyncGenerator
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # Optional dependency
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-load_dotenv()
-
-
 class RecognitionServer:
     """
     智能識別服務器 - 意圖識別與安全路由
