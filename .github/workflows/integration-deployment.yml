@@ -407,10 +407,30 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| 層級 | 服務 | 評分 | 狀態 | 位置 |" >> $GITHUB_STEP_SUMMARY
           echo "|------|------|------|------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier 1** | Contracts L1 Service | **85/100** | ${{ needs.tier1-contracts-l1.result == 'success' && '✅ 通過' || '❌ 失敗' }} | \`core/contracts/contracts-L1/contracts/\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier 2** | MCP Servers | **90/100** | ${{ needs.tier2-mcp-servers.result == 'success' && '✅ 通過' || '❌ 失敗' }} | \`mcp-servers/\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier 3** | Auto-Fix Bot System | **80/100** | ${{ needs.tier3-autofix-bot.result == 'success' && '✅ 通過' || '❌ 失敗' }} | 根目錄 + \`scripts/\` + \`tools/\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier 4** | Dashboard | **95/100** | ${{ needs.tier4-dashboard.result == 'success' && '✅ 通過' || '❌ 失敗' }} | \`auto-fix-bot-dashboard.html\` |" >> $GITHUB_STEP_SUMMARY
+          tier1_status="${{ needs.tier1-contracts-l1.result }}"
+          tier1_display="❌ 失敗"
+          if [ "$tier1_status" = "success" ]; then
+            tier1_display="✅ 通過"
+          fi
+          tier2_status="${{ needs.tier2-mcp-servers.result }}"
+          tier2_display="❌ 失敗"
+          if [ "$tier2_status" = "success" ]; then
+            tier2_display="✅ 通過"
+          fi
+          tier3_status="${{ needs.tier3-autofix-bot.result }}"
+          tier3_display="❌ 失敗"
+          if [ "$tier3_status" = "success" ]; then
+            tier3_display="✅ 通過"
+          fi
+          tier4_status="${{ needs.tier4-dashboard.result }}"
+          tier4_display="❌ 失敗"
+          if [ "$tier4_status" = "success" ]; then
+            tier4_display="✅ 通過"
+          fi
+          echo "| **Tier 1** | Contracts L1 Service | **85/100** | $tier1_display | \`core/contracts/contracts-L1/contracts/\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier 2** | MCP Servers | **90/100** | $tier2_display | \`mcp-servers/\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier 3** | Auto-Fix Bot System | **80/100** | $tier3_display | 根目錄 + \`scripts/\` + \`tools/\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier 4** | Dashboard | **95/100** | $tier4_display | \`auto-fix-bot-dashboard.html\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "## 🎯 總體評分: **87.5/100** ⭐⭐⭐⭐" >> $GITHUB_STEP_SUMMARY
