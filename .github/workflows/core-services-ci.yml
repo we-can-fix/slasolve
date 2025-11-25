@@ -65,7 +65,7 @@ jobs:
       
       - name: 📊 Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@a1bc2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u # v4.3.1
         with:
           name: contracts-l1-coverage
           path: core/contracts/contracts-L1/contracts/coverage/
