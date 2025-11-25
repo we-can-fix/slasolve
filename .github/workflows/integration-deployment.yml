@@ -439,7 +439,9 @@ jobs:
             if [ "$status" = "success" ]; then
               display="✅ 通過"
             fi
-            echo "| **${tier^^:0:5}** | ${tier_names[$tier]} | **${tier_scores[$tier]}** | $display | ${tier_paths[$tier]} |" >> $GITHUB_STEP_SUMMARY
+            tier_label="${tier:0:5}"
+            tier_upper="${tier_label^^}"
+            echo "| **${tier_upper}** | ${tier_names[$tier]} | **${tier_scores[$tier]}** | $display | ${tier_paths[$tier]} |" >> $GITHUB_STEP_SUMMARY
           done
           echo "" >> $GITHUB_STEP_SUMMARY
           
