@@ -379,7 +379,7 @@ open auto-fix-bot-dashboard.html
 docker-compose up -d
 
 # 驗證健康狀態
-curl http://localhost:3000/healthz
+curl http://localhost:3000/health
 curl http://localhost:3001/health
 curl http://localhost:8080/health
 ```
