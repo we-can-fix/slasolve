@@ -118,7 +118,9 @@ function createHealthCheckServer() {
     res.writeHead(404);
     res.end(JSON.stringify({
       error: 'Not Found',
+      message: 'The requested endpoint does not exist',
       path: url,
+      availableEndpoints: ['/health', '/healthz', '/ready', '/readyz', '/version', '/status', '/'],
       timestamp: new Date().toISOString()
     }));
   });
