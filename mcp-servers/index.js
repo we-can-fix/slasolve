@@ -13,8 +13,8 @@
 
 import http from 'http';
 
-const PORT = process.env.MCP_SERVER_PORT || 3001;
-const HOST = process.env.MCP_SERVER_HOST || '0.0.0.0';
+const SERVER_PORT = process.env.MCP_SERVER_PORT || 3001;
+const SERVER_HOST = process.env.MCP_SERVER_HOST || '0.0.0.0';
 
 /**
  * 創建 HTTP 服務器用於健康檢查和狀態監控
@@ -149,11 +149,11 @@ async function main() {
   // 創建並啟動 HTTP 健康檢查服務器
   const healthServer = createHealthCheckServer();
   
-  healthServer.listen(PORT, HOST, () => {
-    console.log(`✅ Health check server listening on http://${HOST}:${PORT}`);
-    console.log(`📊 Health endpoint: http://${HOST}:${PORT}/health`);
-    console.log(`🔍 Status endpoint: http://${HOST}:${PORT}/status`);
-    console.log(`📝 Version endpoint: http://${HOST}:${PORT}/version`);
+  healthServer.listen(SERVER_PORT, SERVER_HOST, () => {
+    console.log(`✅ Health check server listening on http://${SERVER_HOST}:${SERVER_PORT}`);
+    console.log(`📊 Health endpoint: http://${SERVER_HOST}:${SERVER_PORT}/health`);
+    console.log(`🔍 Status endpoint: http://${SERVER_HOST}:${SERVER_PORT}/status`);
+    console.log(`📝 Version endpoint: http://${SERVER_HOST}:${SERVER_PORT}/version`);
     console.log('');
     console.log('🎯 Available MCP Services:');
     console.log('  - Code Analysis (code-analyzer.js)');

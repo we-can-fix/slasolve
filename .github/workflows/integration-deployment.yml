@@ -340,15 +340,41 @@ jobs:
           # 測試 Contracts L1 映像
           echo "Testing Contracts L1..."
           docker run --rm -d --name test-contracts-l1 -p 3000:3000 slasolve/contracts-l1:test
-          sleep 5
-          curl -f http://localhost:3000/healthz || exit 1
+          
+          # 等待服務啟動（使用重試機制）
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000/healthz > /dev/null; then
+              echo "✅ Contracts L1 健康檢查通過"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Contracts L1 啟動超時"
+              docker logs test-contracts-l1
+              exit 1
+            fi
+            echo "等待 Contracts L1 啟動... ($i/30)"
+            sleep 2
+          done
           docker stop test-contracts-l1
           
           # 測試 MCP Servers 映像
           echo "Testing MCP Servers..."
           docker run --rm -d --name test-mcp-servers -p 3001:3001 slasolve/mcp-servers:test
-          sleep 5
-          curl -f http://localhost:3001/health || exit 1
+          
+          # 等待服務啟動（使用重試機制）
+          for i in {1..30}; do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              echo "✅ MCP Servers 健康檢查通過"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ MCP Servers 啟動超時"
+              docker logs test-mcp-servers
+              exit 1
+            fi
+            echo "等待 MCP Servers 啟動... ($i/30)"
+            sleep 2
+          done
           docker stop test-mcp-servers
           
           echo "✅ 所有 Docker 映像測試通過"
