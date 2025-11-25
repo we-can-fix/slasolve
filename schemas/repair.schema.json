@@ -15,7 +15,7 @@
     "repair_id": {
       "type": "string",
       "description": "Unique identifier for this repair",
-      "pattern": "^repair-[a-z0-9-]+$"
+      "pattern": "^repair-[a-zA-Z0-9_-]+$"
     },
     "timestamp": {
       "type": "string",

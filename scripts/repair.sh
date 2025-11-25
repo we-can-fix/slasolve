@@ -414,9 +414,17 @@ main() {
     local total_fixed=0
     
     # 執行修復
-    repair_security_issues && total_fixed=$((total_fixed + $?)) || true
-    repair_performance_issues && total_fixed=$((total_fixed + $?)) || true
-    repair_quality_issues && total_fixed=$((total_fixed + $?)) || true
+    repair_security_issues
+    local security_fixed=$?
+    total_fixed=$((total_fixed + security_fixed))
+    
+    repair_performance_issues
+    local performance_fixed=$?
+    total_fixed=$((total_fixed + performance_fixed))
+    
+    repair_quality_issues
+    local quality_fixed=$?
+    total_fixed=$((total_fixed + quality_fixed))
     
     # 驗證
     local verification_passed="true"

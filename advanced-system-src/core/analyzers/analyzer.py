@@ -63,9 +63,9 @@ class CodeIssue:
         if self.timestamp is None:
             self.timestamp = datetime.utcnow()
         if self.evidence_hash is None:
-            # 生成證據哈希
+            # 生成完整的 SHA256 證據哈希以符合 SLSA 合規要求
             evidence = f"{self.file}:{self.line}:{self.message}"
-            self.evidence_hash = hashlib.sha256(evidence.encode()).hexdigest()[:16]
+            self.evidence_hash = hashlib.sha256(evidence.encode()).hexdigest()
     
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典"""

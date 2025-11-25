@@ -357,7 +357,9 @@ generate_html_report() {
 </body>
 </html>
 EOF
-        sed -i "s/TIMESTAMP/$(date)/" "$HTML_REPORT"
+        # 使用臨時變量避免 sed 特殊字符問題
+        REPORT_TIMESTAMP=$(date)
+        sed -i "s|TIMESTAMP|${REPORT_TIMESTAMP}|" "$HTML_REPORT"
         
         log_success "HTML 報告已生成: $HTML_REPORT"
     fi

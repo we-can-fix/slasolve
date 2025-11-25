@@ -180,7 +180,12 @@ install_python_dependencies() {
     fi
     
     # 激活虛擬環境
-    source venv/bin/activate
+    if [ -f "venv/bin/activate" ]; then
+        source venv/bin/activate
+    else
+        log_error "無法激活虛擬環境: venv/bin/activate 不存在"
+        return 1
+    fi
     
     # 升級 pip
     pip install --upgrade pip

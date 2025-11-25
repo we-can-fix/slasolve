@@ -954,7 +954,8 @@ security:
     log_all_actions: true
     retention_days: 90
     immutable: true
-    blockchain_backed: false
+    blockchain_backed: true  # 企業級 SLSA Level 3 合規要求
+    blockchain_provider: "hyperledger"  # 可選: hyperledger, ethereum, custom
 
 # ============================================================================
 # 通知配置 (Notifications)

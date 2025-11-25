@@ -17,7 +17,7 @@
     "analysis_id": {
       "type": "string",
       "description": "Unique identifier for this analysis",
-      "pattern": "^[a-z0-9-]+$"
+      "pattern": "^[a-zA-Z0-9_-]+$"
     },
     "timestamp": {
       "type": "string",
@@ -233,8 +233,8 @@
         },
         "evidence_hash": {
           "type": "string",
-          "description": "SHA256 hash of issue evidence",
-          "pattern": "^[a-f0-9]{16,64}$"
+          "description": "SHA256 hash of issue evidence (full 64-character hash for SLSA compliance)",
+          "pattern": "^[a-f0-9]{64}$"
         },
         "references": {
           "type": "array",
