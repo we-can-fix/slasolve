@@ -10,6 +10,7 @@ Core capabilities:
 - Real-time streaming responses
 - Context-aware routing
 - Safety-critical validation
+- Auto environment upgrade (自動環境升級)
 """
 
 import os
@@ -25,6 +26,17 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Auto-upgrade environment if needed
+# 自動升級環境（如果需要）
+try:
+    from auto_upgrade_env import AutoUpgradeEnvironment
+    _upgrader = AutoUpgradeEnvironment(auto_install=True)
+    _upgrade_results = _upgrader.check_and_upgrade(['dotenv', 'loguru'])
+    if _upgrader.installed_deps:
+        logger.info(f"已自動升級環境 Auto-upgraded: {', '.join(_upgrader.installed_deps)}")
+except Exception as e:
+    logger.warning(f"環境升級檢查跳過 Auto-upgrade skipped: {e}")
 
 # Import agents
 try:

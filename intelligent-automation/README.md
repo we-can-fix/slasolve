@@ -110,24 +110,63 @@ This module uses a plugin architecture. Core functionality works without externa
 ### 安裝 Installation
 
 ```bash
-# 方式 1: 安裝最小依賴（推薦）
-# Method 1: Install minimal dependencies (recommended)
+# 方式 1: 自動環境升級（推薦）
+# Method 1: Auto environment upgrade (recommended)
+python auto_upgrade_env.py
+
+# 方式 1a: 升級所有可選依賴
+# Method 1a: Upgrade all optional dependencies
+python auto_upgrade_env.py --upgrade-all
+
+# 方式 1b: 僅檢查不安裝
+# Method 1b: Check only without installing
+python auto_upgrade_env.py --check-only
+
+# 方式 2: 手動安裝最小依賴
+# Method 2: Manual minimal dependencies
 pip install typing-extensions python-dotenv loguru
 
-# 方式 2: 安裝完整開發依賴
-# Method 2: Install full development dependencies
+# 方式 3: 安裝完整開發依賴
+# Method 3: Install full development dependencies
 pip install -r requirements.txt
 
-# 方式 3: 使用虛擬環境
-# Method 3: Use virtual environment
+# 方式 4: 使用虛擬環境
+# Method 4: Use virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # 或 venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
 
-**注意 Note:** 模組可在缺少部分依賴時正常運行，會自動降級功能。
-Module can operate normally with missing optional dependencies by gracefully degrading features.
+**自動升級示例 Auto-upgrade Example:**
+```bash
+$ python auto_upgrade_env.py
+
+=== 智能環境升級系統 Intelligent Environment Upgrade System ===
+
+⚠ 缺少依賴 Missing dependency: dotenv
+   環境變量管理 (Environment variable management)
+   正在自動升級環境... Auto-upgrading environment...
+正在安裝 Installing: python-dotenv>=1.0.0
+✓ 安裝成功 Installed: python-dotenv>=1.0.0
+✓ 環境升級成功 Environment upgraded for: dotenv
+
+=== 環境升級摘要 Environment Upgrade Summary ===
+
+✓ 已安裝依賴 Installed (1):
+  - dotenv: 環境變量管理 (Environment variable management)
+
+✓ 環境配置完成 Environment configuration complete
+```
+
+**智能環境升級 Intelligent Environment Upgrade:**
+- 當檢測到缺少依賴時，系統會**自動升級環境配置**並安裝缺失的依賴
+- 無需手動干預，確保最佳功能體驗
+- 支持選擇性升級和批量升級
+
+When missing dependencies are detected, the system **automatically upgrades environment configuration** and installs missing dependencies.
+- No manual intervention required for optimal functionality
+- Supports selective and batch upgrades
 
 ### 基本使用 Basic Usage
 
