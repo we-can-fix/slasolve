@@ -31,6 +31,24 @@ interface RateLimitStore {
 }
 
 /**
+ * Redis 客戶端接口 (用於類型安全)
+ */
+interface RedisClientInterface {
+  get(key: string): Promise<string | null>;
+  multi(): RedisMultiInterface;
+  del(key: string): Promise<number>;
+}
+
+/**
+ * Redis Multi 接口
+ */
+interface RedisMultiInterface {
+  incr(key: string): RedisMultiInterface;
+  pexpire(key: string, milliseconds: number): RedisMultiInterface;
+  exec(): Promise<Array<[Error | null, unknown]>>;
+}
+
+/**
  * 內存存儲實現 (適用於單機部署)
  */
 class MemoryStore implements RateLimitStore {
@@ -88,7 +106,7 @@ class MemoryStore implements RateLimitStore {
  * Redis 存儲實現 (適用於分布式部署)
  */
 class RedisStore implements RateLimitStore {
-  constructor(private redisClient: any) {}
+  constructor(private redisClient: RedisClientInterface) {}
 
   async get(key: string): Promise<number | null> {
     const value = await this.redisClient.get(key);
@@ -101,7 +119,7 @@ class RedisStore implements RateLimitStore {
     multi.pexpire(key, windowMs);
     
     const results = await multi.exec();
-    return results[0][1]; // incr 的結果
+    return results[0][1] as number; // incr 的結果
   }
 
   async reset(key: string): Promise<void> {
