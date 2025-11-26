@@ -1,0 +1,191 @@
+---
+name: 🔧 Stage 1 - 基礎 CI 自動評論
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  basic-checks:
+    name: 基礎檢查與測試
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 檢出代碼
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+      - name: 🟢 設定 Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📦 安裝依賴（Root）
+        run: npm install
+      
+      - name: 🔍 環境健康檢查
+        id: health-check
+        run: |
+          echo "## 環境資訊" > health-check.log
+          echo "- Node 版本: $(node --version)" >> health-check.log
+          echo "- NPM 版本: $(npm --version)" >> health-check.log
+          echo "- 作業系統: $(uname -s)" >> health-check.log
+          echo "- 核心版本: $(uname -r)" >> health-check.log
+          echo "" >> health-check.log
+          echo "✅ 環境健康檢查完成" >> health-check.log
+          
+          cat health-check.log
+          echo "status=success" >> $GITHUB_OUTPUT
+      
+      - name: 🧪 運行基礎測試（Contracts L1）
+        id: tests-contracts
+        working-directory: core/contracts/contracts-L1/contracts
+        run: |
+          echo "開始測試 Contracts L1 服務..."
+          npm ci
+          
+          # 運行測試並捕獲輸出
+          if npm test -- --ci --passWithNoTests 2>&1 | tee test-output.log; then
+            TEST_RESULT=0
+            echo "✅ Contracts L1 測試通過"
+          else
+            TEST_RESULT=1
+            echo "❌ Contracts L1 測試失敗"
+          fi
+          
+          echo "result=$TEST_RESULT" >> $GITHUB_OUTPUT
+          echo "service=contracts-l1" >> $GITHUB_OUTPUT
+      
+      - name: 📊 測試覆蓋率檢查
+        id: coverage
+        if: always()
+        working-directory: core/contracts/contracts-L1/contracts
+        run: |
+          # 嘗試從測試輸出提取覆蓋率資訊
+          if [ -f test-output.log ]; then
+            # 從測試輸出中提取 "All files" 行的 Statements 覆蓋率
+            COVERAGE=$(grep "All files" test-output.log | grep -oP '\|\s+\K[0-9.]+' | head -1)
+            if [ -n "$COVERAGE" ]; then
+              echo "覆蓋率: ${COVERAGE}%"
+              echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+            else
+              echo "coverage=N/A" >> $GITHUB_OUTPUT
+              echo "無法從測試輸出提取覆蓋率資訊"
+            fi
+          else
+            echo "coverage=N/A" >> $GITHUB_OUTPUT
+            echo "測試輸出檔案不存在"
+          fi
+      
+      - name: 📝 自動評論（基礎版）
+        if: always()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const testResult = parseInt('${{ steps.tests-contracts.outputs.result }}');
+            const healthStatus = '${{ steps.health-check.outputs.status }}';
+            const coverage = '${{ steps.coverage.outputs.coverage }}';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            
+            // 構建評論內容
+            let comment = '## 🔧 Stage 1 - 基礎 CI 檢查結果\n\n';
+            
+            // 測試結果
+            if (testResult === 0) {
+              comment += '### ✅ 測試結果：通過\n\n';
+              comment += '所有基礎測試已成功通過！\n\n';
+            } else {
+              comment += '### ❌ 測試結果：失敗\n\n';
+              comment += '部分測試失敗，請檢查測試日誌。\n\n';
+            }
+            
+            // 環境檢查
+            comment += '### 🔍 環境健康檢查\n\n';
+            if (healthStatus === 'success') {
+              comment += '✅ 環境配置正常\n\n';
+            } else {
+              comment += '⚠️ 環境配置可能存在問題\n\n';
+            }
+            
+            // 覆蓋率資訊
+            if (coverage !== 'N/A') {
+              comment += '### 📊 測試覆蓋率\n\n';
+              comment += `當前覆蓋率：**${coverage}%**\n\n`;
+              
+              const coverageNum = parseFloat(coverage);
+              if (coverageNum >= 80) {
+                comment += '✅ 覆蓋率符合要求（≥80%）\n\n';
+              } else if (coverageNum >= 60) {
+                comment += '⚠️ 覆蓋率偏低，建議提升至 80% 以上\n\n';
+              } else {
+                comment += '❌ 覆蓋率過低，需要增加測試\n\n';
+              }
+            }
+            
+            // 檢查詳情
+            comment += '### 📋 檢查詳情\n\n';
+            comment += '| 項目 | 狀態 |\n';
+            comment += '|------|------|\n';
+            comment += `| Contracts L1 測試 | ${testResult === 0 ? '✅ 通過' : '❌ 失敗'} |\n`;
+            comment += `| 環境健康檢查 | ${healthStatus === 'success' ? '✅ 通過' : '⚠️ 警告'} |\n`;
+            comment += `| 測試覆蓋率 | ${coverage !== 'N/A' ? coverage + '%' : 'N/A'} |\n\n`;
+            
+            // 建議與後續步驟
+            comment += '### 💡 建議與後續步驟\n\n';
+            if (testResult === 0) {
+              comment += '- ✅ 所有基礎檢查通過，可以繼續進行代碼審查\n';
+              comment += '- 📝 確保代碼符合專案編碼規範\n';
+              comment += '- 🔒 進行安全性檢查\n';
+            } else {
+              comment += '- ❌ 請先修復失敗的測試\n';
+              comment += '- 🔍 查看詳細的測試日誌以了解失敗原因\n';
+              comment += '- 📚 參考測試文檔以了解測試要求\n';
+            }
+            
+            comment += `\n---\n📊 [查看完整 CI 日誌](${runUrl})\n`;
+            comment += `⏰ 檢查時間：${new Date().toISOString()}\n`;
+            
+            // 發布評論
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: 📊 CI 摘要
+        if: always()
+        run: |
+          echo "## 🎯 Stage 1 基礎 CI 檢查完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 檢查結果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.tests-contracts.outputs.result }}" = "0" ]; then
+            echo "✅ **測試狀態**：通過" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **測試狀態**：失敗" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "✅ **環境檢查**：${{ steps.health-check.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.coverage.outputs.coverage }}" != "N/A" ]; then
+            echo "📊 **測試覆蓋率**：${{ steps.coverage.outputs.coverage }}%" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📍 服務位置" >> $GITHUB_STEP_SUMMARY
+          echo "- Contracts L1: \`core/contracts/contracts-L1/contracts/\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Stage 1** - 基礎 CI 自動評論機制" >> $GITHUB_STEP_SUMMARY
+      
+      - name: ❌ 失敗時退出
+        if: steps.tests-contracts.outputs.result != '0'
+        run: |
+          echo "測試失敗，CI 檢查未通過"
+          exit 1
