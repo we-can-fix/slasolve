@@ -76,7 +76,7 @@ jobs:
       
       - name: 🔧 設定預設輸出值
         id: set-defaults
-        if: steps.get-pr.outputs.pr_number == ''
+        if: ${{ !steps.get-pr.outputs.pr_number }}
         run: |
           echo "has_failures=false" >> $GITHUB_OUTPUT
           echo "failed_workflows=[]" >> $GITHUB_OUTPUT
@@ -84,7 +84,7 @@ jobs:
       
       - name: 🔍 檢查 CI 狀態
         id: check-status
-        if: steps.get-pr.outputs.pr_number
+        if: steps.get-pr.outputs.pr_number != ''
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
