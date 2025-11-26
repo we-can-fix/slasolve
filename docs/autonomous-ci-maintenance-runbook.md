@@ -57,7 +57,9 @@ free -h
 |------|---------|---------|
 | 首要待命 | Slack: #critical-alerts | 24/7 |
 | 備份待命 | PagerDuty: autonomous-oncall | 24/7 |
-| 工程領導 | +1-XXX-XXX-XXXX | 緊急情況 |
+| 工程領導 | Email: engineering-leadership@example.com | 緊急情況 |
+
+> ⚠️ **注意**: 在生產環境部署前，請更新為實際的聯繫方式
 
 ---
 

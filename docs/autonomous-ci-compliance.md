@@ -212,20 +212,22 @@ graph TD
     "primary_oncall": {
       "slack": "#critical-alerts",
       "pagerduty": "autonomous-system-oncall",
-      "phone": "+1-XXX-XXX-XXXX"
+      "phone": "請配置實際電話號碼"
     },
     "backup_oncall": {
       "slack": "#backup-oncall",
       "email": "backup-team@example.com",
-      "phone": "+1-XXX-XXX-YYYY"
+      "phone": "請配置實際電話號碼"
     },
     "management_escalation": {
       "email": "engineering-leadership@example.com",
-      "phone": "+1-XXX-XXX-ZZZZ"
+      "phone": "請配置實際電話號碼"
     }
   }
 }
 ```
+
+> ⚠️ **配置提醒**: 在生產環境使用前，請將上述聯繫方式替換為實際的緊急聯繫信息
 
 ## 5. 運營指標和 SLA
 

@@ -223,8 +223,8 @@ jobs:
             else
               echo "⚠️  掃描嘗試 $ATTEMPT 失敗"
               if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-                echo "❌ 達到最大重試次數，使用降級模式"
-                echo '{"metadata":{"vulnerabilities":{"total":0,"critical":0}}}' > audit.json
+                echo "❌ 達到最大重試次數，記錄掃描失敗狀態"
+                echo '{"metadata":{"vulnerabilities":{"total":-1,"critical":-1}},"error":"scan_failed"}' > audit.json
               fi
               ATTEMPT=$((ATTEMPT + 1))
               sleep 5
@@ -237,7 +237,11 @@ jobs:
           echo "total_vulnerabilities=$VULNERABILITIES" >> "$GITHUB_OUTPUT"
           echo "critical_vulnerabilities=$CRITICAL" >> "$GITHUB_OUTPUT"
 
-          if [ "$CRITICAL" -gt 0 ]; then
+          # 檢查掃描是否失敗（-1 表示掃描失敗）
+          if [ "$VULNERABILITIES" -eq -1 ]; then
+            echo "security_status=SCAN_FAILED" >> "$GITHUB_OUTPUT"
+            echo "::warning::安全掃描失敗，無法確定漏洞狀態"
+          elif [ "$CRITICAL" -gt 0 ]; then
             echo "security_status=CRITICAL" >> "$GITHUB_OUTPUT"
           elif [ "$VULNERABILITIES" -gt 5 ]; then
             echo "security_status=WARNING" >> "$GITHUB_OUTPUT"
@@ -397,7 +401,8 @@ jobs:
             RESPONSE_TIME=$(curl -w '%{time_total}' -o /dev/null -s -m 10 "$HEALTH_URL" 2>/dev/null || echo "999")
             echo "響應時間：${RESPONSE_TIME}s"
             
-            if (( $(echo "$RESPONSE_TIME > 1.0" | bc -l 2>/dev/null || echo 0) )); then
+            # 使用 awk 進行浮點數比較，不依賴 bc
+            if awk -v rt="$RESPONSE_TIME" 'BEGIN {exit !(rt > 1.0)}'; then
               echo "⚠️  性能警告：$SERVICE 響應時間 ${RESPONSE_TIME}s（閾值：1.0s）"
             fi
           fi
@@ -409,8 +414,12 @@ jobs:
             echo "資源使用 - CPU: $CPU, 內存: $MEMORY"
           fi
 
-          # 清理
-          docker-compose down 2>/dev/null || true
+          # 清理（始終執行，即使前面失敗）
+          cleanup() {
+            echo "執行清理..."
+            docker-compose down 2>/dev/null || true
+          }
+          trap cleanup EXIT
 
           if [ "$HEALTH_OK" = true ]; then
             exit 0
@@ -666,9 +675,11 @@ jobs:
             4. 🔍 分析根本原因
 
             ### 聯繫方式
-            - **緊急熱線**：+1-XXX-XXX-XXXX
             - **Slack**：#critical-alerts
             - **PagerDuty**：autonomous-system-oncall
+            - **Email**：engineering-leadership@example.com
+            
+            > ⚠️ 配置提醒：請在生產環境中更新為實際聯繫方式
 
             ---
             *此告警由自動駕駛級 CI 系統自動生成*`;
