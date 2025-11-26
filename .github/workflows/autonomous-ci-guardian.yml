@@ -372,7 +372,11 @@ jobs:
           YAML
 
           echo "部署到 5% 流量"
-          # kubectl apply -f canary-deploy.yaml
+          if [ "$DRY_RUN" != "true" ]; then
+            kubectl apply -f canary-deploy.yaml
+          else
+            echo "[DRY-RUN] 模擬部署，不實際執行"
+          fi
 
           echo "監控金絲雀部署 5 分鐘..."
           sleep 300
