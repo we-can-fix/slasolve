@@ -224,7 +224,9 @@ declare -A DIR_DESC=(
   ["attest-build-provenance-main"]="建置認證主程式 / Build attestation main program"
 )
 
-for dir in $(ls -d */ 2>/dev/null | sed 's/\/$//'); do
+shopt -s nullglob
+for dir in */; do
+  dir="${dir%/}"  # 移除尾部斜線
   if [ -d "$dir" ] && [[ ! " ${SPECIAL_DIRS[@]} " =~ " ${dir} " ]]; then
     desc="${DIR_DESC[$dir]:-}"
     if [ -n "$desc" ]; then
