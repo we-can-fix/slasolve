@@ -36,12 +36,23 @@ jobs:
           import subprocess
           import os
 
-          # 從配置檔讀取失敗模式關鍵字
+          # 從配置檔讀取失敗模式關鍵字（含錯誤處理與預設值）
           config_path = '.github/ci-failure-patterns.json'
-          with open(config_path, 'r', encoding='utf-8') as f:
-              config = json.load(f)
+          default_keywords = {
+              'docker': ['docker', 'compose', 'image', 'container'],
+              'test': ['test', 'spec', 'unit', 'jest', 'pytest'],
+              'performance': ['perf', 'optimize', 'speed', 'slow'],
+              'security': ['security', 'auth', 'encrypt', 'vulnerability'],
+              'memory': ['memory', 'leak', 'gc', 'oom'],
+          }
           
-          failure_keywords = config.get('failure_keywords', {})
+          try:
+              with open(config_path, 'r', encoding='utf-8') as f:
+                  config = json.load(f)
+              failure_keywords = config.get('failure_keywords', default_keywords)
+          except (FileNotFoundError, json.JSONDecodeError) as e:
+              print(f"Warning: Could not load config file ({e}), using default keywords")
+              failure_keywords = default_keywords
 
           result = subprocess.run(
               ['git', 'log', '--oneline', '-50'],
