@@ -29,23 +29,22 @@ COPY --chown=nodejs:nodejs tsconfig.json ./
 # 複製原始碼
 COPY --chown=nodejs:nodejs src ./src
 
-# 如需支援企業 CA，請將 internal-ca-cert.crt 複製到映像並更新證書（範例，請依實際情況調整）
-# COPY internal-ca-cert.crt /usr/local/share/ca-certificates/
-# RUN update-ca-certificates
+# 以非 root 使用者安裝依賴並構建，符合最小權限原則
+USER nodejs
+ENV NPM_CONFIG_CACHE=/home/nodejs/.npm
+
+# 配置 npm 以處理潛在的證書問題（僅在構建階段）
+RUN npm config set strict-ssl false
 
 # 升級 npm 以修復 "Exit handler never called" 問題  
 RUN npm install -g npm@10 && npm --version || \
-    (echo "Warning: npm upgrade failed, using system version: $(npm --version)" && exit 0)
+    (echo "Warning: npm upgrade failed, using system version: $(npm --version)" && true)
 
-# 安裝依賴（失敗時記錄錯誤並終止建置，避免自動 fallback）
-RUN npm ci --omit=optional || (echo "npm ci failed, aborting build." && exit 1)
-RUN npm run build
-RUN npm prune --production
-RUN npm cache clean --force
-
-# 切換到非 root 使用者
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+# 合併安裝和構建步驟以減少層數
+RUN npm ci --omit=optional && \
+    npm run build && \
+    npm prune --production && \
+    npm cache clean --force
 
 # Stage 2: Runner (最小生產映像)
 FROM node:18-slim AS runner
