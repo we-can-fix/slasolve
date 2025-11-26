@@ -134,13 +134,15 @@ for dir in "${SPECIAL_DIRS[@]}"; do
     
     # 顯示該目錄的第一層結構 / Show first-level structure
     if [ "$dir" != "node_modules" ] && [ "$dir" != ".git" ]; then
-      echo "  \`\`\`"
-      ls -1 "$dir" 2>/dev/null | head -10
-      file_count=$(ls -1 "$dir" 2>/dev/null | wc -l)
-      if [ "$file_count" -gt 10 ]; then
-        echo "  ... (共 ${file_count} 個項目 / Total ${file_count} items)"
+      if [ "$(ls -A "$dir" 2>/dev/null)" ]; then
+        echo "  \`\`\`"
+        ls -1 "$dir" 2>/dev/null | head -10 | sed 's/[`$\\]/\\&/g'
+        file_count=$(ls -1 "$dir" 2>/dev/null | wc -l)
+        if [ "$file_count" -gt 10 ]; then
+          echo "  ... (共 ${file_count} 個項目 / Total ${file_count} items)"
+        fi
+        echo "  \`\`\`"
       fi
-      echo "  \`\`\`"
     fi
   fi
 done
