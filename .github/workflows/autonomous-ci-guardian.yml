@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: [main, develop]
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '0 * * * *' # 每小時執行一次，降低資源消耗
+  workflow_dispatch: # 支援手動觸發
 
 env:
   SAFETY_THRESHOLD: "0.99"
@@ -31,7 +32,7 @@ jobs:
       - name: 🧠 ML failure prediction
         id: ml-predict
         run: |
-          cat > predict_failures.py << 'PYCODE'
+          cat > predict_failures.py << 'EOF'
           import json
           import subprocess
 
@@ -43,6 +44,7 @@ jobs:
           )
 
           commits = [line for line in result.stdout.strip().split('\n') if line]
+          # TODO: 將失敗模式關鍵字提取為配置檔案或環境變數以便維護
           failure_patterns = {
               'docker': 0,
               'test': 0,
@@ -74,7 +76,7 @@ jobs:
           }
 
           print(json.dumps(output))
-          PYCODE
+          EOF
 
           python3 predict_failures.py > prediction.json
           cat prediction.json
@@ -86,7 +88,6 @@ jobs:
         id: complexity-analysis
         run: |
           cat > analyze_complexity.sh << 'BASH'
-          #!/bin/bash
           set -euo pipefail
 
           FILES=$(find . -name "*.js" -o -name "*.ts")
@@ -156,7 +157,7 @@ jobs:
           risk_score = 0
           risk_score += predictions.get('risk_score', 0) * 40
 
-          high_risk_areas = predictions.get('high_risk_areas', [])
+          high_risk_areas = set(predictions.get('high_risk_areas', []))
           critical_areas = {'security', 'memory', 'performance'}
           overlap = len(critical_areas.intersection(high_risk_areas))
           risk_score += (overlap / len(critical_areas)) * 30
@@ -199,7 +200,7 @@ jobs:
   critical-service-health-check:
     needs: predictive-failure-detection
     runs-on: ubuntu-latest
-    if: ${{ needs.predictive-failure-detection.outputs.should_proceed == 'True' }}
+    if: ${{ needs.predictive-failure-detection.outputs.proceed == 'true' }}
 
     strategy:
       matrix:
@@ -215,7 +216,6 @@ jobs:
         timeout-minutes: 5
         run: |
           cat > health_check.sh << 'BASH'
-          #!/bin/bash
           set -euo pipefail
 
           SERVICE=$1
@@ -258,7 +258,7 @@ jobs:
       - name: 📊 Record service metrics
         if: always()
         run: |
-          cat > metrics.json << 'JSON'
+          cat > metrics.json << JSON
           {
             "service": "${{ matrix.service }}",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -309,8 +309,18 @@ jobs:
         if: ${{ steps.remediation-decision.outputs.action == 'ROLLBACK' }}
         run: |
           echo "🚨 觸發自動回滾..."
-          PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1)
+          PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
           echo "回滾到版本：$PREVIOUS_VERSION"
+
+          # 驗證 tag 是否存在且格式正確（如 v1.2.3）
+          if [ -z "$PREVIOUS_VERSION" ]; then
+            echo "❌ 無法找到前一個版本，回滾失敗"
+            exit 1
+          fi
+          if ! [[ "$PREVIOUS_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ 版本格式不正確: $PREVIOUS_VERSION"
+            exit 1
+          fi
 
           git checkout "$PREVIOUS_VERSION"
           docker-compose build --no-cache
@@ -363,16 +373,25 @@ jobs:
           YAML
 
           echo "部署到 5% 流量"
-          # kubectl apply -f canary-deploy.yaml
-
-          echo "監控金絲雀部署 5 分鐘..."
-          sleep 300
-
-          ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}')
-          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
-            echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE"
-            exit 1
+          if [ "$DRY_RUN" != "true" ]; then
+            kubectl apply -f canary-deploy.yaml
+          else
+            echo "[DRY-RUN] 模擬部署，不實際執行"
           fi
+
+          echo "監控金絲雀部署，最長 5 分鐘..."
+          for i in {1..60}; do
+            ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep -oP 'error_rate\s+\K[\d.]+' || echo "0")
+            if [ -z "$ERROR_RATE" ]; then
+              echo "❌ 無法取得錯誤率，假定為失敗"
+              ERROR_RATE="1.0"
+            fi
+            if (( $(echo "$ERROR_RATE > 0.01" | bc -l 2>/dev/null) )); then
+              echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE（第 ${i} 次檢查）"
+              exit 1
+            fi
+            sleep 5
+          done
 
           echo "✅ 金絲雀部署成功"
 
@@ -383,7 +402,12 @@ jobs:
 
           for PERCENTAGE in 25 50 100; do
             echo "部署到 ${PERCENTAGE}% 流量..."
-            # kubectl set env deployment/autonomous-system TRAFFIC_PERCENTAGE=$PERCENTAGE
+            if [ "$DRY_RUN" != "true" ]; then
+              kubectl set env deployment/autonomous-system TRAFFIC_PERCENTAGE=$PERCENTAGE
+              # 注意：此命令僅改變 deployment 的環境變數，若需真正流量分配，請配合 Service Mesh (如 Istio) 或 Ingress 加權路由設定
+            else
+              echo "[DRY-RUN] 模擬流量切換，不實際執行"
+            fi
 
             sleep 120
 
@@ -470,9 +494,9 @@ jobs:
             4. 🔍 分析根本原因
 
             ### 聯繫方式
-            - **緊急熱線**：+1-XXX-XXX-XXXX
-            - **Slack**：#critical-alerts
-            - **PagerDuty**：autonomous-system-oncall
+            - **緊急熱線**：${{ secrets.EMERGENCY_HOTLINE }}
+            - **Slack**：${{ vars.SLACK_ALERT_CHANNEL }}
+            - **PagerDuty**：${{ vars.PAGERDUTY_SERVICE }}
 
             ---
             *此告警由自動駕駛級 CI 系統自動生成*`;
