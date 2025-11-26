@@ -182,7 +182,7 @@ jobs:
   critical-service-health-check:
     needs: predictive-failure-detection
     runs-on: ubuntu-latest
-    if: ${{ needs.predictive-failure-detection.outputs.should_proceed == 'true' }}
+    if: ${{ needs.predictive-failure-detection.outputs.proceed == 'true' }}
 
     strategy:
       matrix:
@@ -223,7 +223,7 @@ jobs:
           HEALTH_EXIT=$?
 
           RESPONSE_TIME=$(curl -w '%{time_total}' -o /dev/null -s http://localhost:${PORT}/health)
-          if awk "BEGIN {exit !($RESPONSE_TIME > 1.0)}"; then
+          if awk -v rt="$RESPONSE_TIME" 'BEGIN {exit !(rt > 1.0)}'; then
             echo "⚠️  性能警告：$SERVICE 響應時間 ${RESPONSE_TIME}s（閾值：1.0s）"
             exit 1
           fi
@@ -247,14 +247,17 @@ jobs:
       - name: 📊 Record service metrics
         if: always()
         run: |
-          cat > metrics.json << JSON
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          cat > metrics.json << 'JSON'
           {
             "service": "${{ matrix.service }}",
-            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "timestamp": "TIMESTAMP_PLACEHOLDER",
             "status": "${{ steps.health-check.outcome }}"
           }
           JSON
-
+          
+          # 替換佔位符以避免 shell 變數展開問題
+          sed -i "s/TIMESTAMP_PLACEHOLDER/$TIMESTAMP/" metrics.json
           cat metrics.json
 
   auto-remediation:
@@ -389,7 +392,7 @@ jobs:
             sleep ${{ env.CANARY_MONITOR_DURATION }}
 
             ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}' || echo "1.0")
-            if [ -z "$ERROR_RATE" ] || awk "BEGIN {exit !($ERROR_RATE > ${{ env.ERROR_RATE_THRESHOLD }})}"; then
+            if [ -z "$ERROR_RATE" ] || awk -v er="$ERROR_RATE" -v threshold="${{ env.ERROR_RATE_THRESHOLD }}" 'BEGIN {exit !(er > threshold)}'; then
               echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE（閾值：${{ env.ERROR_RATE_THRESHOLD }}）"
               kill $PF_PID 2>/dev/null || true
               exit 1
@@ -518,9 +521,9 @@ jobs:
             4. 🔍 分析根本原因
 
             ### 聯繫方式
-            - **緊急熱線**：${process.env.EMERGENCY_HOTLINE || '+1-XXX-XXX-XXXX（待配置）'}
-            - **Slack**：${process.env.SLACK_ALERT_CHANNEL || '#critical-alerts'}
-            - **PagerDuty**：${process.env.PAGERDUTY_SERVICE || 'autonomous-system-oncall'}
+            - **緊急熱線**：\${EMERGENCY_HOTLINE:-+1-XXX-XXX-XXXX（待配置）}
+            - **Slack**：\${SLACK_ALERT_CHANNEL:-#critical-alerts}
+            - **PagerDuty**：\${PAGERDUTY_SERVICE:-autonomous-system-oncall}
 
             ---
             *此告警由自動駕駛級 CI 系統自動生成*`;
