@@ -3,11 +3,13 @@ import { Request, Response } from 'express';
 import { ProvenanceController } from './controllers/provenance';
 import { SLSAController } from './controllers/slsa';
 import { AssignmentController } from './controllers/assignment';
+import { EscalationController } from './controllers/escalation';
 
 const router = Router();
 const provenanceController = new ProvenanceController();
 const slsaController = new SLSAController();
 const assignmentController = new AssignmentController();
+const escalationController = new EscalationController();
 
 // 健康檢查端點
 router.get('/healthz', (_req: Request, res: Response) => {
@@ -71,6 +73,16 @@ router.post('/api/v1/assignment/escalate/:id', assignmentController.escalate);
 router.get('/api/v1/assignment/all', assignmentController.getAllAssignments);
 router.get('/api/v1/assignment/report', assignmentController.getPerformanceReport);
 
+// 進階升級端點 (Advanced Escalation Endpoints)
+router.post('/api/v1/escalation/create', escalationController.createEscalation.bind(escalationController));
+router.get('/api/v1/escalation/:escalationId', escalationController.getEscalation.bind(escalationController));
+router.get('/api/v1/escalation/incident/:incidentId', escalationController.getEscalationsByIncident.bind(escalationController));
+router.post('/api/v1/escalation/:escalationId/status', escalationController.updateEscalationStatus.bind(escalationController));
+router.post('/api/v1/escalation/:escalationId/resolve', escalationController.resolveEscalation.bind(escalationController));
+router.post('/api/v1/escalation/:escalationId/escalate', escalationController.escalateFurther.bind(escalationController));
+router.get('/api/v1/escalation/customer-service/available', escalationController.getAvailableCustomerServiceAgents.bind(escalationController));
+router.get('/api/v1/escalation/statistics', escalationController.getEscalationStatistics.bind(escalationController));
+
 // 根端點
 router.get('/', (_req: Request, res: Response) => {
   res.json({
@@ -105,6 +117,16 @@ router.get('/', (_req: Request, res: Response) => {
         escalate: 'POST /api/v1/assignment/escalate/{id}',
         getAll: 'GET /api/v1/assignment/all',
         getReport: 'GET /api/v1/assignment/report'
+      },
+      escalation: {
+        create: 'POST /api/v1/escalation/create',
+        get: 'GET /api/v1/escalation/{escalationId}',
+        getByIncident: 'GET /api/v1/escalation/incident/{incidentId}',
+        updateStatus: 'POST /api/v1/escalation/{escalationId}/status',
+        resolve: 'POST /api/v1/escalation/{escalationId}/resolve',
+        escalateFurther: 'POST /api/v1/escalation/{escalationId}/escalate',
+        getAvailableAgents: 'GET /api/v1/escalation/customer-service/available',
+        getStatistics: 'GET /api/v1/escalation/statistics'
       }
     }
   });
