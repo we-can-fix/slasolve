@@ -4,7 +4,66 @@
 
 ## 📋 腳本清單
 
-### 1. build-matrix.sh
+### 1. generate-directory-tree.sh
+
+**用途**: 產生完整專案目錄結構圖譜
+
+**功能**:
+- 自動掃描整個專案目錄結構
+- 產生樹狀結構圖譜（使用 tree 或 find 命令）
+- 統計專案檔案和目錄數量
+- 分析檔案類型分布
+- 標註特殊目錄（.git、.github、node_modules 等）
+- 提供各目錄用途說明
+
+**使用方法**:
+```bash
+# 基本用法（輸出到終端）
+./scripts/generate-directory-tree.sh
+
+# 輸出到檔案
+./scripts/generate-directory-tree.sh > DIRECTORY_STRUCTURE.md
+
+# 或使用預設輸出檔名
+./scripts/generate-directory-tree.sh DIRECTORY_STRUCTURE.md
+```
+
+**輸出內容**:
+- 完整目錄樹結構（排除 node_modules、.git、dist 等）
+- 特殊目錄清單與說明
+- 專案統計資訊（檔案數、目錄數）
+- 檔案類型分布表
+- 最大的目錄清單
+- 主要目錄用途說明
+
+**特性**:
+- 雙語輸出（繁體中文 / English）
+- Markdown 格式，便於閱讀和分享
+- 自動排除建置產物和依賴目錄
+- 支援 tree 命令（若可用）或使用 find 作為備選
+- 提供詳細的統計分析
+
+**範例輸出**:
+```markdown
+# SLASolve 專案目錄結構圖譜
+
+## 📂 完整目錄結構 / Complete Directory Structure
+...
+
+## 📋 特殊目錄說明 / Special Directories
+- `.git/`: Git 版本控制目錄
+- `.github/`: GitHub 設定與工作流程
+...
+
+## 📊 專案統計 / Project Statistics
+- 總檔案數: 828
+- 總目錄數: 222
+...
+```
+
+---
+
+### 2. build-matrix.sh
 
 **用途**: 多語言建置腳本，支援 CodeQL 分析
 
@@ -191,6 +250,7 @@ export GITHUB_TOKEN="your_github_token"
 所有腳本需要執行權限：
 
 ```bash
+chmod +x generate-directory-tree.sh
 chmod +x build-matrix.sh
 chmod +x advanced-push-protection.sh
 chmod +x manage-secret-patterns.py
@@ -231,10 +291,25 @@ cat .git/hooks/pre-push
 
 ## 📖 使用場景
 
-### 場景 1: CI/CD 整合
+### 場景 1: 專案文檔
+
+```bash
+# 產生最新的目錄結構文檔
+./scripts/generate-directory-tree.sh > DIRECTORY_STRUCTURE.md
+
+# 將結果提交到 repository
+git add DIRECTORY_STRUCTURE.md
+git commit -m "docs: update directory structure"
+git push
+```
+
+### 場景 2: CI/CD 整合
 
 ```yaml
 # 在 GitHub Actions 中使用
+- name: Generate Directory Structure
+  run: ./scripts/generate-directory-tree.sh > DIRECTORY_STRUCTURE.md
+
 - name: Build Project
   run: ./scripts/build-matrix.sh javascript
 
@@ -242,9 +317,12 @@ cat .git/hooks/pre-push
   run: ./scripts/advanced-push-protection.sh scan
 ```
 
-### 場景 2: 本地開發
+### 場景 3: 本地開發
 
 ```bash
+# 檢視專案結構
+./scripts/generate-directory-tree.sh | less
+
 # 開發前設定
 ./scripts/advanced-push-protection.sh install
 
@@ -252,7 +330,7 @@ cat .git/hooks/pre-push
 git push origin main
 ```
 
-### 場景 3: 批量管理
+### 場景 4: 批量管理
 
 ```bash
 # 導出現有模式
