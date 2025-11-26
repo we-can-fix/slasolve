@@ -11,7 +11,7 @@ Version: 2.0.0
 """
 
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 import sys
 
