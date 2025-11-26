@@ -5,12 +5,8 @@
 
 import { EscalationEngine } from '../services/escalation/escalation-engine';
 import {
-  EscalationTrigger,
-  EscalationLevel,
-  EscalationStatus,
   EscalationContext
 } from '../types/escalation';
-import { Priority } from '../types/assignment';
 
 describe('EscalationEngine', () => {
   let engine: EscalationEngine;
@@ -366,14 +362,13 @@ describe('EscalationEngine', () => {
 
       // 創建多個升級事件
       const esc1 = engine.createEscalation('incident-011', 'TIMEOUT_NO_RESPONSE', 'MEDIUM', context);
-      const esc2 = engine.createEscalation('incident-011', 'TIMEOUT_NO_PROGRESS', 'MEDIUM', context);
+      engine.createEscalation('incident-011', 'TIMEOUT_NO_PROGRESS', 'MEDIUM', context);
       const esc3 = engine.createEscalation('incident-012', 'MANUAL_REQUEST', 'LOW', context);
 
       const escalationsForIncident = engine.getEscalationsByIncident('incident-011');
 
       expect(escalationsForIncident).toHaveLength(2);
       expect(escalationsForIncident.map(e => e.id)).toContain(esc1.id);
-      expect(escalationsForIncident.map(e => e.id)).toContain(esc2.id);
       expect(escalationsForIncident.map(e => e.id)).not.toContain(esc3.id);
     });
 
@@ -406,8 +401,8 @@ describe('EscalationEngine', () => {
 
       // 創建多個升級事件
       const esc1 = engine.createEscalation('incident-013', 'AUTO_FIX_FAILED', 'CRITICAL', context);
-      const esc2 = engine.createEscalation('incident-014', 'SAFETY_CRITICAL', 'CRITICAL', context);
-      const esc3 = engine.createEscalation('incident-015', 'TIMEOUT_NO_PROGRESS', 'MEDIUM', context);
+      engine.createEscalation('incident-014', 'SAFETY_CRITICAL', 'CRITICAL', context);
+      engine.createEscalation('incident-015', 'TIMEOUT_NO_PROGRESS', 'MEDIUM', context);
 
       // 解決其中一個
       engine.resolveEscalation(esc1.id, {

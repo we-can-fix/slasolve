@@ -346,14 +346,36 @@ export class EscalationController {
     try {
       const { startDate, endDate } = req.query;
 
-      // 默認為最近 7 天
-      const start = startDate 
-        ? new Date(startDate as string) 
-        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      const end = endDate 
-        ? new Date(endDate as string) 
-        : new Date();
+      // 驗證和解析日期參數
+      let start: Date;
+      let end: Date;
+
+      if (startDate) {
+        start = new Date(startDate as string);
+        if (isNaN(start.getTime())) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid startDate format. Please use ISO 8601 format.'
+          });
+          return;
+        }
+      } else {
+        // 默認為最近 7 天
+        start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      }
+
+      if (endDate) {
+        end = new Date(endDate as string);
+        if (isNaN(end.getTime())) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid endDate format. Please use ISO 8601 format.'
+          });
+          return;
+        }
+      } else {
+        end = new Date();
+      }
 
       const statistics = this.escalationEngine.getEscalationStatistics(start, end);
 

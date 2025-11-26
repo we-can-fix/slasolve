@@ -141,7 +141,7 @@ export interface EscalationResolution {
     commitHash?: string;
   };
   
-  // 防止措施
+  // 預防措施
   preventiveMeasures?: string[];
   
   // 知識庫文章
