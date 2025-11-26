@@ -306,6 +306,7 @@ jobs:
           retention-days: 30
   
   # ==================== 互動式客服整合 ====================
+  # Note: 僅在 PR 時提供互動式反饋，push 事件通過 CI 摘要查看結果
   interactive-service:
     name: 🤖 Phase1 Integration 互動式客服
     needs: [validate-configuration, infrastructure-readiness-check]

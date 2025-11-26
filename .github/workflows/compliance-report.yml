@@ -251,6 +251,7 @@ jobs:
         echo "- **Vulnerabilities**: ${{ steps.metrics.outputs.vuln_open }} (${{ steps.metrics.outputs.vuln_critical }} critical)" >> $GITHUB_STEP_SUMMARY
   
   # ==================== 互動式客服整合 ====================
+  # Note: 僅在手動觸發時提供互動式反饋，月度自動報告透過 issue 追蹤
   interactive-service:
     name: 🤖 Compliance Report 互動式客服
     needs: [generate-compliance-report]
