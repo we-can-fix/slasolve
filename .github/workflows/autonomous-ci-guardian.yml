@@ -309,9 +309,18 @@ jobs:
         if: ${{ steps.remediation-decision.outputs.action == 'ROLLBACK' }}
         run: |
           echo "🚨 觸發自動回滾..."
-          PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1)
+          PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
           echo "回滾到版本：$PREVIOUS_VERSION"
 
+          # 驗證 tag 是否存在且格式正確（如 v1.2.3）
+          if [ -z "$PREVIOUS_VERSION" ]; then
+            echo "❌ 無法找到前一個版本，回滾失敗"
+            exit 1
+          fi
+          if ! [[ "$PREVIOUS_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ 版本格式不正確: $PREVIOUS_VERSION"
+            exit 1
+          fi
           git checkout "$PREVIOUS_VERSION"
           docker-compose build --no-cache
           docker-compose up -d
