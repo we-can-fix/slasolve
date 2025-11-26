@@ -19,12 +19,14 @@ env:
   MEMORY_THRESHOLD: "512MB"
   CRITICAL_SERVICES: "flight-control,gps-nav,obstacle-detect"
   PRIMARY_SERVICE_HEALTH_URL: "http://localhost:8001/health"
+  CANARY_SERVICE_URL: "http://localhost:8080"
   HEALTH_CHECK_DELAY: "5"
   CANARY_MONITOR_DURATION: "300"
   ERROR_RATE_THRESHOLD: "0.01"
   STAGED_DEPLOY_PERCENTAGES: "25,50,100"
   STAGED_DEPLOY_INTERVAL: "120"
   SERVICE_STARTUP_DELAY: "3"
+  METRICS_ENDPOINT_TIMEOUT: "50"
   DRY_RUN: "true"
 
 jobs:
@@ -164,9 +166,11 @@ jobs:
           CRITICAL="${CRITICAL_VULNS:-0}"
 
           # 完全自主決策：所有風險等級都自動處理
+          # PROCEED 控制是否執行健康檢查 - CRITICAL 風險跳過健康檢查直接進入修復流程
           if [ "$CRITICAL" -gt 0 ]; then
             LEVEL="CRITICAL"
-            PROCEED="true"  # 自動回滾策略
+            PROCEED="false"  # 跳過健康檢查（proceed=false），auto-remediation 仍會執行並觸發回滾
+            echo "🚨 偵測到 CRITICAL 級別安全漏洞，將跳過健康檢查並觸發自動回滾"
           elif [ "$FAILURES" -gt 2 ]; then
             LEVEL="HIGH"
             PROCEED="true"  # 自動金絲雀部署
@@ -385,26 +389,37 @@ jobs:
             # 設定 trap 以確保在任何情況下都清理 port-forward
             trap "kill $PF_PID 2>/dev/null || true" EXIT
             
-            # 等待 port-forward 就緒
-            for i in {1..10}; do
-              if curl -s http://localhost:8080/metrics > /dev/null 2>&1; then
+            # 等待 port-forward 就緒（每 5 秒檢查一次，總超時由 METRICS_ENDPOINT_TIMEOUT 控制）
+            TIMEOUT=${{ env.METRICS_ENDPOINT_TIMEOUT }}
+            INTERVAL=5
+            MAX_ATTEMPTS=$((TIMEOUT / INTERVAL))
+            for i in $(seq 1 $MAX_ATTEMPTS); do
+              if curl -s ${{ env.CANARY_SERVICE_URL }}/metrics > /dev/null 2>&1; then
                 break
               fi
-              echo "等待 metrics 端點就緒 ($i/10)..."
-              sleep 5
+              echo "等待 metrics 端點就緒 ($i/$MAX_ATTEMPTS)..."
+              sleep $INTERVAL
             done
+
+            # 驗證 metrics 端點最終是否就緒
+            if ! curl -s ${{ env.CANARY_SERVICE_URL }}/metrics > /dev/null 2>&1; then
+              kill $PF_PID 2>/dev/null || true
+              echo "❌ metrics 端點在 ${{ env.METRICS_ENDPOINT_TIMEOUT }} 秒後仍未就緒，金絲雀部署失敗"
+              exit 1
+            fi
 
             echo "監控金絲雀部署 ${{ env.CANARY_MONITOR_DURATION }} 秒..."
             sleep ${{ env.CANARY_MONITOR_DURATION }}
 
             # 預設為 0.0 以處理指標不可用的情況
-            ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}')
+            ERROR_RATE=$(curl -s ${{ env.CANARY_SERVICE_URL }}/metrics 2>/dev/null | grep error_rate | awk '{print $NF}')
             if [ -z "$ERROR_RATE" ]; then
               echo "⚠️  無法取得錯誤率指標，假設為 0.0（健康狀態）"
               ERROR_RATE="0.0"
             fi
             
             if awk -v er="$ERROR_RATE" -v threshold="${{ env.ERROR_RATE_THRESHOLD }}" 'BEGIN {exit !(er > threshold)}'; then
+              kill $PF_PID 2>/dev/null || true
               echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE（閾值：${{ env.ERROR_RATE_THRESHOLD }}）"
               exit 1
             fi
@@ -421,6 +436,12 @@ jobs:
         run: |
           echo "📊 開始分階段部署..."
 
+          # 檢查 jq 是否可用（在開始部署前檢查一次）
+          if ! command -v jq &>/dev/null; then
+            echo "❌ 錯誤：jq 未安裝或不可用"
+            exit 1
+          fi
+
           IFS=',' read -ra PERCENTAGES <<< "${{ env.STAGED_DEPLOY_PERCENTAGES }}"
           for PERCENTAGE in "${PERCENTAGES[@]}"; do
             echo "部署到 ${PERCENTAGE}% 流量..."
@@ -432,9 +453,25 @@ jobs:
 
             sleep ${{ env.STAGED_DEPLOY_INTERVAL }}
 
-            HEALTH=$(curl -s http://localhost:8080/health 2>/dev/null | jq -r '.status' || echo "unknown")
+            # 使用金絲雀服務 URL 進行健康檢查（分階段部署通常與金絲雀使用相同端點）
+            HEALTH=$(curl -s ${{ env.CANARY_SERVICE_URL }}/health 2>/dev/null | jq -r '.status' || echo "unknown")
             if [ "$HEALTH" != "healthy" ]; then
               echo "❌ 部署失敗（健康狀態: $HEALTH），自動回滾..."
+              # 嘗試 Kubernetes 回滾（如果使用 kubectl）
+              if command -v kubectl &>/dev/null; then
+                if ! kubectl rollout undo deployment/autonomous-system 2>/dev/null; then
+                  echo "⚠️ Kubernetes 回滾失敗或未使用 Kubernetes"
+                fi
+              fi
+              # 嘗試 docker-compose 回滾（如果使用 docker-compose）
+              if [ -f docker-compose.yml ] && command -v docker-compose &>/dev/null; then
+                echo "嘗試使用 docker-compose 回滾..."
+                docker-compose down || true
+                # 如有前一版本映像，可在此處指定
+              fi
+              echo "故障排除指引："
+              echo "  - Kubernetes: kubectl get pods -l app=autonomous-system"
+              echo "  - Docker: docker ps -a"
               exit 1
             fi
 
@@ -450,21 +487,22 @@ jobs:
           
           # 準備 docker-compose 檔案（如不存在）
           if [ ! -f docker-compose.yml ]; then
-            cat > docker-compose.yml << 'COMPOSE'
-          version: '3.8'
-          services:
-            app:
-              image: autonomous-system:latest
-              ports:
-                - '8001:8001'
-              environment:
-                - NODE_ENV=production
-              healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-                interval: 30s
-                timeout: 10s
-                retries: 5
-          COMPOSE
+            # 使用 printf 產生正確格式的 YAML（避免 heredoc 縮排問題）
+            printf '%s\n' \
+              "version: '3.8'" \
+              "services:" \
+              "  app:" \
+              "    image: autonomous-system:latest" \
+              "    ports:" \
+              "      - '8001:8001'" \
+              "    environment:" \
+              "      - NODE_ENV=production" \
+              "    healthcheck:" \
+              '      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]' \
+              "      interval: 30s" \
+              "      timeout: 10s" \
+              "      retries: 5" \
+              > docker-compose.yml
           fi
 
           docker-compose build --no-cache
