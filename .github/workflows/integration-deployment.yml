@@ -33,6 +33,7 @@ permissions:
   packages: write
   security-events: write
   pull-requests: write
+  issues: write
   id-token: write
 
 env:
@@ -495,3 +496,26 @@ jobs:
           
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "🎉 **所有層級已完成持續整合檢查！系統已準備好進行部署。**" >> $GITHUB_STEP_SUMMARY
+  
+  # ==================== 互動式客服整合 ====================
+  interactive-service:
+    name: 🤖 Integration & Deployment 互動式客服
+    needs: [tier1-contracts-l1, tier2-mcp-servers, tier3-autofix-bot, tier4-dashboard, docker-integration, production-readiness-report]
+    if: always()
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "Integration & Deployment"
+      ci-status: ${{ (needs.tier1-contracts-l1.result == 'success' && needs.tier2-mcp-servers.result == 'success' && needs.tier3-autofix-bot.result == 'success' && needs.tier4-dashboard.result == 'success' && needs.docker-integration.result == 'success') && 'success' || 'failure' }}
+      ci-context: |
+        {
+          "tier1_contracts_l1": "${{ needs.tier1-contracts-l1.result }}",
+          "tier2_mcp_servers": "${{ needs.tier2-mcp-servers.result }}",
+          "tier3_autofix_bot": "${{ needs.tier3-autofix-bot.result }}",
+          "tier4_dashboard": "${{ needs.tier4-dashboard.result }}",
+          "docker_integration": "${{ needs.docker-integration.result }}"
+        }
+      error-logs: ${{ (needs.tier1-contracts-l1.result == 'failure' || needs.tier2-mcp-servers.result == 'failure' || needs.docker-integration.result == 'failure') && '檢測到整合或部署失敗，請查看詳細日誌' || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
