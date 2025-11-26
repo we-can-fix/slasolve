@@ -391,7 +391,6 @@ class TestPerformance:
         import time
         
         config = {'max_workers': 4}
-        engine = CodeAnalysisEngine(config)
         
         # 生成大量測試代碼
         large_code = "\n".join([f"def func_{i}(): pass" for i in range(100)])
