@@ -223,7 +223,7 @@ echo "2. Docker 資源使用:"
 docker system df
 
 # 建議清理（如果超過 80%）
-USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+USAGE=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%' | tr -d ' ')
 if [[ "$USAGE" =~ ^[0-9]+$ ]] && [ "$USAGE" -gt 80 ]; then
   echo "⚠️  磁盤使用超過 80%，建議清理"
   echo "清理建議:"
@@ -598,7 +598,7 @@ git secrets --scan || echo "需要安裝 git-secrets"
 # 4. 檢查不安全的配置
 echo ""
 echo "4. 配置安全檢查..."
-INSECURE_FILES=$(grep -l "password\|secret\|key" docker-compose.yml .env 2>/dev/null || echo "")
+INSECURE_FILES=$(grep -E -l '(PASSWORD|SECRET|KEY)\s*=' docker-compose.yml .env 2>/dev/null || echo "")
 if [ -n "$INSECURE_FILES" ]; then
   echo "⚠️  以下檔案可能包含明文密鑰（請人工審查）："
   echo "$INSECURE_FILES"

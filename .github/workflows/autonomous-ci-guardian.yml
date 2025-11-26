@@ -250,7 +250,8 @@ jobs:
           echo "critical_vulnerabilities=$CRITICAL" >> "$GITHUB_OUTPUT"
 
           # 檢查掃描是否失敗（-1 表示掃描失敗）
-          if [ "$VULNERABILITIES" -eq -1 ]; then
+          # 先驗證變數為有效數字，避免 jq 解析失敗時的語法錯誤
+          if [[ "$VULNERABILITIES" =~ ^-?[0-9]+$ ]] && [ "$VULNERABILITIES" -eq -1 ]; then
             echo "security_status=SCAN_FAILED" >> "$GITHUB_OUTPUT"
             echo "::warning::安全掃描失敗，無法確定漏洞狀態"
           elif [ "$CRITICAL" -gt 0 ]; then
@@ -369,8 +370,8 @@ jobs:
                 exit 1
               fi
               ATTEMPT=$((ATTEMPT + 1))
-              # 指數退避：5s, 10s, 20s...
-              BACKOFF=$((5 * (2 ** (ATTEMPT - 2))))
+              # 指數退避：5s, 10s, 20s...（使用位元運算確保整數）
+              BACKOFF=$((5 * (1 << (ATTEMPT - 1))))
               echo "等待 $BACKOFF 秒後重試..."
               sleep $BACKOFF
             fi
@@ -424,8 +425,8 @@ jobs:
             RESPONSE_TIME=$(curl -w '%{time_total}' -o /dev/null -s -m 10 "$HEALTH_URL" 2>/dev/null || echo "999")
             echo "響應時間：${RESPONSE_TIME}s"
             
-            # 僅在響應時間為有效數字時才進行性能比較
-            if [[ "$RESPONSE_TIME" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            # 僅在響應時間為有效數值（含科學記數法）時才進行性能比較
+            if awk -v rt="$RESPONSE_TIME" 'BEGIN {exit !(rt+0==rt)}'; then
               # 使用 awk 進行浮點數比較，不依賴 bc
               if awk -v rt="$RESPONSE_TIME" 'BEGIN {exit !(rt > 1.0)}'; then
                 echo "⚠️  性能警告：$SERVICE 響應時間 ${RESPONSE_TIME}s（閾值：1.0s）"

@@ -264,11 +264,15 @@ graph TD
 
 #### 服務等級協議
 
+> 註：下表「關鍵服務」可用性目標（99.99%）高於整體系統可用性目標（99.9%，詳見5.1節），請依服務層級分別評估。
+
 | 服務 | 可用性 | 響應時間 | 吞吐量 | 支援級別 |
 |------|--------|---------|--------|---------|
 | 關鍵服務 | 99.99% | < 100ms | 10000 req/s | 24/7 |
 | 重要服務 | 99.9% | < 500ms | 1000 req/s | 工作時間 |
 | 一般服務 | 99.5% | < 2s | 100 req/s | 最佳努力 |
+
+> 整體系統可用性目標：99.9%（詳見5.1節）
 
 #### 降級服務承諾
 - **部分降級**: 核心功能保持可用
@@ -328,6 +332,16 @@ metrics:
 ```python
 # 告警嚴重性決策樹
 def calculate_alert_severity(metric, threshold):
+    """
+    計算告警嚴重性
+    
+    Args:
+        metric: 包含 service 和 value 屬性的指標物件
+        threshold: 包含 critical 和 warning 屬性的閾值物件
+    
+    Returns:
+        str: 告警等級 (P0/P1/P2/P3)
+    """
     if metric.service in CRITICAL_SERVICES:
         if metric.value > threshold.critical:
             return "P0"
