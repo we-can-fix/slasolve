@@ -14,13 +14,14 @@ env:
   PERFORMANCE_THRESHOLD: "1000ms"
   MEMORY_THRESHOLD: "512MB"
   CRITICAL_SERVICES: "flight-control,gps-nav,obstacle-detect"
+  DRY_RUN: "true" # 設為 "false" 以執行實際的 kubectl 命令
 
 jobs:
   predictive-failure-detection:
     runs-on: ubuntu-latest
     outputs:
       risk_level: ${{ steps.risk-assessment.outputs.level }}
-      should_proceed: ${{ steps.risk-assessment.outputs.proceed }}
+      proceed: ${{ steps.risk-assessment.outputs.proceed }}
       predicted_failures: ${{ steps.ml-predict.outputs.failures }}
 
     steps:
@@ -147,7 +148,7 @@ jobs:
           PREDICTED_FAILURES: ${{ steps.ml-predict.outputs.failures }}
           CRITICAL_VULNS: ${{ steps.security-scan.outputs.critical_vulnerabilities }}
         run: |
-          cat > risk_assessment.py << 'PYCODE'
+          cat > risk_assessment.py << 'EOF'
           import json
           import os
 
@@ -186,7 +187,7 @@ jobs:
           }
 
           print(json.dumps(output, ensure_ascii=False))
-          PYCODE
+          EOF
 
           python3 risk_assessment.py > assessment.json
           cat assessment.json
@@ -381,7 +382,7 @@ jobs:
 
           echo "監控金絲雀部署，最長 5 分鐘..."
           for i in {1..60}; do
-            ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep -oP 'error_rate\s+\K[\d.]+' || echo "0")
+            ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}' || echo "0")
             if [ -z "$ERROR_RATE" ]; then
               echo "❌ 無法取得錯誤率，假定為失敗"
               ERROR_RATE="1.0"
