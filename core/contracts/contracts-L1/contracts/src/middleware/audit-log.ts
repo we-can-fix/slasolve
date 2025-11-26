@@ -108,6 +108,10 @@ function sanitizeData(
     return data.map(item => sanitizeData(item, sensitiveFields));
   }
 
+  // 僅處理純物件，排除特殊物件 (Date, Map, Set, 類別實例等)
+  if (Object.getPrototypeOf(data) !== Object.prototype) {
+    return data;
+  }
   const sanitized: Record<string, unknown> = { ...(data as Record<string, unknown>) };
 
   for (const key in sanitized) {
