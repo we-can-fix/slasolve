@@ -24,11 +24,8 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-# 輸出檔案 / Output file
-OUTPUT_FILE="${1:-DIRECTORY_STRUCTURE.md}"
-
-# 需要排除的目錄模式 / Directories to exclude
-EXCLUDE_PATTERNS=(
+# 需要排除的目錄 / Directories to exclude
+EXCLUDE_DIRS=(
   "node_modules"
   ".git"
   "dist"
@@ -37,6 +34,10 @@ EXCLUDE_PATTERNS=(
   ".next"
   ".cache"
   "__pycache__"
+)
+
+# 需要排除的檔案模式 / File patterns to exclude
+EXCLUDE_FILES=(
   "*.pyc"
   ".DS_Store"
   "*.log"
@@ -70,29 +71,38 @@ echo '```'
 
 # 使用 tree 命令（如果可用）或 find 命令
 if command -v tree &> /dev/null; then
-  # 建立排除參數 / Build exclude parameters
-  EXCLUDE_ARGS=""
-  for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-    EXCLUDE_ARGS="${EXCLUDE_ARGS} -I '${pattern}'"
+  # 建立排除參數陣列 / Build exclude parameters array
+  TREE_ARGS=(-a -L 5 --dirsfirst --filesfirst)
+  for dir in "${EXCLUDE_DIRS[@]}"; do
+    TREE_ARGS+=(-I "${dir}")
+  done
+  for file in "${EXCLUDE_FILES[@]}"; do
+    TREE_ARGS+=(-I "${file}")
   done
   
   # 執行 tree 命令 / Execute tree command
-  eval "tree -a -L 5 --dirsfirst --filesfirst ${EXCLUDE_ARGS} ."
+  tree "${TREE_ARGS[@]}" .
 else
   # 使用 find 作為備選方案 / Use find as fallback
   echo "."
   
-  # 建立排除條件 / Build exclude conditions
-  FIND_EXCLUDE=""
-  for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-    if [ -n "$FIND_EXCLUDE" ]; then
-      FIND_EXCLUDE="${FIND_EXCLUDE} -o"
-    fi
-    FIND_EXCLUDE="${FIND_EXCLUDE} -name '${pattern}' -prune"
+  # 建立排除條件陣列 / Build exclude conditions array
+  FIND_ARGS=()
+  FIND_ARGS+=(".")
+  
+  # 添加目錄排除條件
+  for dir in "${EXCLUDE_DIRS[@]}"; do
+    FIND_ARGS+=(-path "*/${dir}" -prune -o)
   done
   
-  # 執行 find 並格式化輸出 / Execute find and format output
-  eval "find . ${FIND_EXCLUDE} -o -print" | sed -e 's;[^/]*/;|____;g;s;____|; |;g' | sort
+  # 添加檔案排除條件
+  for file in "${EXCLUDE_FILES[@]}"; do
+    FIND_ARGS+=(-name "${file}" -o)
+  done
+  
+  # 添加列印條件並執行
+  FIND_ARGS+=(-print)
+  find "${FIND_ARGS[@]}" | sed -e 's;[^/]*/;|____;g;s;____|; |;g' | sort
 fi
 
 echo '```'
@@ -125,7 +135,7 @@ for dir in "${SPECIAL_DIRS[@]}"; do
     # 顯示該目錄的第一層結構 / Show first-level structure
     if [ "$dir" != "node_modules" ] && [ "$dir" != ".git" ]; then
       echo "  \`\`\`"
-      ls -1 "$dir" 2>/dev/null | head -10 | sed 's/^/  /'
+      ls -1 "$dir" 2>/dev/null | head -10
       file_count=$(ls -1 "$dir" 2>/dev/null | wc -l)
       if [ "$file_count" -gt 10 ]; then
         echo "  ... (共 ${file_count} 個項目 / Total ${file_count} items)"

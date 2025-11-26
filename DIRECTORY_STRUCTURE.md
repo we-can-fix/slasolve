@@ -1,6 +1,6 @@
 # SLASolve 專案目錄結構圖譜
 
-> 產生時間 / Generated at: 2025-11-26 08:15:37 UTC
+> 產生時間 / Generated at: 2025-11-26 08:19:52 UTC
 > 專案根目錄 / Project root: `/home/runner/work/slasolve/slasolve`
 
 ---
@@ -872,66 +872,66 @@
 - **`.git/`**: Git 版本控制目錄 / Git version control directory
 - **`.github/`**: GitHub 設定與工作流程 / GitHub configuration and workflows
   ```
-  CODEOWNERS
-  FUNDING.yml
-  agents
-  auto-review-config.yml
-  codeql
-  copilot-instructions.md
-  dependabot.yml
-  scripts
-  secret-scanning
-  security-policy.yml
+CODEOWNERS
+FUNDING.yml
+agents
+auto-review-config.yml
+codeql
+copilot-instructions.md
+dependabot.yml
+scripts
+secret-scanning
+security-policy.yml
   ... (共 11 個項目 / Total 11 items)
   ```
 - **`.vscode/`**: VS Code 編輯器設定 / VS Code editor configuration
   ```
-  extensions.json
-  mcp.json
-  settings.json
+extensions.json
+mcp.json
+settings.json
   ```
 - **`.devcontainer/`**: 開發容器設定 / Development container configuration
   ```
-  CHANGELOG.md
-  Dockerfile
-  KB.md
-  QUICK_START.md
-  README.md
-  SOLUTION_SUMMARY.md
-  TEST-GUIDE.md
-  devcontainer.json
-  docker-compose.dev.yml
-  docker-compose.yml
+CHANGELOG.md
+Dockerfile
+KB.md
+QUICK_START.md
+README.md
+SOLUTION_SUMMARY.md
+TEST-GUIDE.md
+devcontainer.json
+docker-compose.dev.yml
+docker-compose.yml
   ... (共 18 個項目 / Total 18 items)
   ```
 - **`.config/`**: 專案設定檔案 / Project configuration files
   ```
-  conftest
+conftest
   ```
 - **`.autofix/`**: 自動修復機制設定 / Auto-fix mechanism configuration
   ```
-  config.json
-  rules
+config.json
+rules
   ```
 - **`.governance/`**: 治理規則與政策 / Governance rules and policies
   ```
-  LANGUAGE_DIMENSION_MAPPING.md
-  README.md
-  deployment
-  module-environment-matrix.yml
-  policies.yaml
-  registry.yaml
+LANGUAGE_DIMENSION_MAPPING.md
+README.md
+deployment
+module-environment-matrix.yml
+policies.yaml
+registry.yaml
   ```
 - **`.registry/`**: 註冊表設定 / Registry configuration
   ```
-  module-A.yaml
-  module-contracts-l1.yaml
-  schema.json
+module-A.yaml
+module-contracts-l1.yaml
+schema.json
   ```
 - **`.docker-templates/`**: Docker 範本檔案 / Docker template files
   ```
-  NODEJS_USER_SETUP.md
-  validate-dockerfiles.sh
+NODEJS_USER_SETUP.md
+validate-dockerfiles.sh
   ```
 - **`node_modules/`**: Node.js 依賴套件（已排除顯示）/ Node.js dependencies (excluded from display)
 
