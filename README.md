@@ -172,48 +172,78 @@ For complete documentation, see:
 - [API Documentation](autonomous-system/docs-examples/API_DOCUMENTATION.md)
 - [Governance Matrix](autonomous-system/docs-examples/governance_matrix.yaml)
 
-## 🔧 CI 故障排除
+## 🤖 動態互動 CI 助手
 
-若 CI 失敗，請遵循以下步驟：
+我們引入了**動態互動 CI 助手系統**，它會智能監控所有 CI workflows，並在失敗時提供即時診斷和互動式反饋。
 
-### 快速診斷
+### 核心特色
 
-1. **查看 PR 自動評論**
-   - CI 系統會自動在 PR 中留言，說明錯誤原因與修正步驟
-   - 評論包含具體的命令和解決方案
+- 🔍 **智能監控**：自動監控所有 CI workflows 的執行狀態
+- 🤖 **自動診斷**：分析失敗原因並提供針對性建議
+- 💬 **互動式反饋**：在 PR 中發布詳細的診斷報告
+- 🗣️ **開發者互動**：支援通過 `@copilot` 命令獲取幫助
+- 🏷️ **智能標籤**：自動管理 CI 相關標籤
+- ♻️ **零資源浪費**：不重複運行測試，只分析現有結果
 
-2. **運行環境檢查**
+### 使用方式
+
+#### 當 CI 失敗時
+
+1. **查看 PR 中的智能診斷報告**
+   - 動態 CI 助手會自動發布診斷報告
+   - 報告包含失敗原因分析和修復建議
+
+2. **執行快速修復命令**
    ```bash
+   # 檢查本地環境
    bash scripts/check-env.sh
+   
+   # 清理 Docker 資源（如需要）
+   docker system prune -a
    ```
-   此腳本會檢查：
-   - Docker 安裝
-   - Docker Compose 安裝
-   - Node.js 版本（需要 >= 18）
-   - Git 安裝
-   - 磁盤空間
 
-3. **參考故障排除文檔**
-   詳細的錯誤解決方案請參考 [CI 故障排除 Runbook](./docs/ci-troubleshooting.md)
+3. **與助手互動獲取幫助**
+   在 PR 評論中輸入：
+   - `@copilot 幫我分析` - 獲取深度分析
+   - `@copilot 環境檢查` - 獲取環境檢查指南
+   - `@copilot 文檔` - 查看相關文檔
 
-### 常見問題
+### 系統優勢
 
-| 問題 | 快速解決 |
-|------|---------|
-| Docker Compose 未安裝 | `curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose` |
-| 磁盤空間不足 | `docker system prune -a` |
-| 測試失敗 | `npm install --workspaces && npm test` |
+| 特性 | 傳統 CI | 動態互動 CI |
+|------|--------|------------|
+| 運行時間 | 10-15 分鐘 | 30-60 秒 |
+| 資源消耗 | 高（構建+測試） | 極低（僅分析） |
+| 反饋速度 | 失敗後 10+ 分鐘 | 失敗後 1 分鐘 |
+| 智能程度 | 基礎日誌 | AI 診斷建議 |
+| 互動性 | 無 | 支援對話 |
+| CI 衝突 | 可能衝突 | 零衝突 |
 
-### CI Workflow 結構
+### 相關文檔
 
-CI 自動評論系統包含：
-- **環境檢查階段**：驗證 Docker、Docker Compose、Node.js
-- **構建與測試階段**：構建鏡像、運行測試
-- **自動評論階段**：生成 PR 評論、添加標籤
+- 📖 [動態 CI 助手完整文檔](./docs/DYNAMIC_CI_ASSISTANT.md)
+- 🔧 [CI 故障排除 Runbook](./docs/ci-troubleshooting.md)
+- 🛠️ [CI 系統架構](./docs/CI_AUTO_COMMENT_SYSTEM.md)
+- 📜 [環境檢查腳本](./scripts/check-env.sh)
 
-### 相關資源
+### 快速參考
 
-- [CI 自動評論 Workflow](../.github/workflows/ci-auto-comment.yml)
-- [環境檢查腳本](./scripts/check-env.sh)
-- [CI 故障排除完整指南](./docs/ci-troubleshooting.md)
+**常見 CI 問題快速修復**
+
+| 問題類型 | 診斷方法 | 快速修復 |
+|---------|---------|---------|
+| 環境問題 | 動態 CI 助手自動診斷 | `bash scripts/check-env.sh` |
+| Docker 構建失敗 | 查看 PR 評論中的分析 | `docker-compose build --no-cache` |
+| 測試失敗 | 查看失敗的具體測試 | `npm test -- --verbose` |
+| 磁盤空間不足 | 檢查磁盤使用率 | `docker system prune -a` |
+| 部署失敗 | 檢查環境變數和權限 | 查看部署日誌 |
+
+**互動命令**
+
+```bash
+# 在 PR 評論中使用：
+@copilot 幫我分析          # 獲取深度 CI 失敗分析
+@copilot 環境檢查          # 獲取環境檢查指南
+@copilot 文檔              # 查看相關文檔連結
+```
 

@@ -1,11 +1,24 @@
 ---
 name: CI 自動評論與錯誤導航系統
 
+# 注意：此 workflow 已被 dynamic-ci-assistant.yml 取代
+# 僅在明確修改 CI 相關文件時觸發，用於驗證 CI 工具本身
 on:
-  push:
-    branches: [main, develop]
   pull_request:
     branches: [main, develop]
+    paths:
+      - '.github/workflows/ci-auto-comment.yml'
+      - '.github/workflows/dynamic-ci-assistant.yml'
+      - 'scripts/check-env.sh'
+      - 'docs/ci-troubleshooting.md'
+      - 'docs/CI_AUTO_COMMENT_SYSTEM.md'
+  workflow_dispatch:
+    inputs:
+      test-mode:
+        description: '測試模式（僅驗證配置）'
+        required: false
+        type: boolean
+        default: true
 
 env:
   DOCKER_COMPOSE_VERSION: "2.20.0"
@@ -103,9 +116,9 @@ jobs:
           echo "::notice title=修正步驟::執行本地環境檢查：bash scripts/check-env.sh"
 
   # ============================================
-  # 第二階段：構建與測試
+  # 第二階段：驗證 CI 工具（輕量級，不實際構建/測試）
   # ============================================
-  build-and-test:
+  validate-ci-tools:
     needs: environment-check
     runs-on: ubuntu-latest
     if: ${{ needs.environment-check.outputs.docker_status == 'success' && needs.environment-check.outputs.compose_status == 'success' }}
@@ -114,66 +127,59 @@ jobs:
       - name: 📥 檢出代碼
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       
-      - name: 🔨 構建 Docker 鏡像
-        id: build
+      - name: 🔍 驗證 Docker Compose 配置
+        id: validate-compose
         shell: bash
         run: |
-          set -o pipefail
-          
-          # 使用 docker compose 或 docker-compose
+          # 僅驗證配置，不實際構建（輕量級，快速）
           if command -v docker-compose &> /dev/null; then
             COMPOSE_CMD="docker-compose"
           else
             COMPOSE_CMD="docker compose"
           fi
           
-          if $COMPOSE_CMD build --no-cache 2>&1 | tee build.log; then
+          echo "驗證 Docker Compose 配置..."
+          if $COMPOSE_CMD config > /dev/null 2>&1; then
             echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ Docker Compose 配置有效"
           else
             echo "status=failed" >> $GITHUB_OUTPUT
-            echo "error_log<<EOF" >> $GITHUB_OUTPUT
-            cat build.log | tail -20 >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            echo "❌ Docker Compose 配置無效"
           fi
         continue-on-error: true
       
-      - name: 🧪 運行測試
-        id: test
+      - name: 🔍 驗證環境檢查腳本
+        id: validate-script
         shell: bash
         run: |
-          set -o pipefail
-          
-          # 注意：此階段使用主機環境運行測試而非 Docker 容器
-          # 原因：已知 Docker 容器內 npm ci 存在 "Exit handler never called" 問題
-          # 這與現有的 core-services-ci.yml 方法一致，確保環境一致性
-          # 參考：core-services-ci.yml 中各服務的測試方法
-          
-          if npm install --workspaces 2>&1 | tee test.log && npm test 2>&1 | tee -a test.log; then
+          echo "驗證環境檢查腳本..."
+          if bash scripts/check-env.sh; then
             echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ 環境檢查腳本執行成功"
           else
             echo "status=failed" >> $GITHUB_OUTPUT
-            echo "error_log<<EOF" >> $GITHUB_OUTPUT
-            cat test.log | tail -30 >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            echo "❌ 環境檢查腳本執行失敗"
           fi
         continue-on-error: true
       
-      - name: 📊 生成測試報告
+      - name: 📊 生成驗證報告
         if: always()
         run: |
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          ## 🔨 構建狀態
-          - 構建結果：${{ steps.build.outputs.status }}
+          ## 🔍 CI 工具驗證狀態
+          - Docker Compose 配置：${{ steps.validate-compose.outputs.status }}
+          - 環境檢查腳本：${{ steps.validate-script.outputs.status }}
           
-          ## 🧪 測試狀態
-          - 測試結果：${{ steps.test.outputs.status }}
+          > 注意：此 workflow 僅驗證 CI 工具本身，不運行完整構建/測試
+          > 完整的 CI 檢查由其他專門的 workflows 負責
+          > 動態互動功能由 dynamic-ci-assistant.yml 提供
           EOF
 
   # ============================================
-  # 第三階段：自動評論與標籤機制
+  # 第三階段：自動評論（僅用於 CI 工具自身的驗證）
   # ============================================
   auto-comment:
-    needs: [environment-check, build-and-test]
+    needs: [environment-check, validate-ci-tools]
     runs-on: ubuntu-latest
     if: always()  # 無論成功或失敗都執行
     
@@ -241,9 +247,9 @@ jobs:
               body: comment
             });
       
-      # ========== 情況 2：構建失敗 ==========
-      - name: 💬 評論：構建失敗
-        if: ${{ needs.build-and-test.result == 'failure' }}
+      # ========== 情況 2：CI 工具驗證失敗 ==========
+      - name: 💬 評論：CI 工具驗證失敗
+        if: ${{ needs.validate-ci-tools.result == 'failure' }}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
@@ -251,39 +257,35 @@ jobs:
             
             if (!prNumber) return;
             
-            const comment = `## ❌ CI 構建失敗
+            const comment = `## ⚠️ CI 工具驗證失敗
             
-            **階段**：Docker 鏡像構建
+            **階段**：CI 工具自身驗證
             
             ### 🔍 常見原因
-            - Dockerfile 語法錯誤
-            - 依賴包無法下載
-            - 資源不足（磁盤空間、內存）
+            - Docker Compose 配置語法錯誤
+            - 環境檢查腳本問題
+            - CI 配置文件格式錯誤
             
             ### ✅ 修正步驟
             
-            **本地調試**：
+            **本地驗證**：
             \`\`\`bash
-            # 1. 清理舊鏡像
-            docker system prune -a
+            # 1. 驗證 Docker Compose 配置
+            docker-compose config
             
-            # 2. 重新構建（詳細輸出）
-            docker-compose build --no-cache --progress=plain
+            # 2. 測試環境檢查腳本
+            bash scripts/check-env.sh
             
-            # 3. 檢查 Dockerfile
-            docker build --tag test-build . --progress=plain
+            # 3. 檢查 YAML 語法
+            yamllint .github/workflows/
             \`\`\`
             
-            **常見修正**：
-            - 檢查 \`Dockerfile\` 中的基礎鏡像版本
-            - 驗證 \`.dockerignore\` 配置
-            - 確保所有依賴在 \`requirements.txt\` 或 \`package.json\` 中
-            
-            ### 📊 詳細日誌
-            [查看 Runner 日誌](${context.payload.pull_request?.html_url}/checks)
+            ### 📚 相關文檔
+            - [CI 系統文檔](./docs/CI_AUTO_COMMENT_SYSTEM.md)
+            - [故障排除指南](./docs/ci-troubleshooting.md)
             
             ---
-            *此評論由 CI 自動生成*`;
+            *此評論由 CI 工具驗證系統自動生成*`;
             
             github.rest.issues.createComment({
               issue_number: prNumber,
@@ -292,61 +294,10 @@ jobs:
               body: comment
             });
       
-      # ========== 情況 3：測試失敗 ==========
-      - name: 💬 評論：測試失敗
-        if: ${{ needs.build-and-test.result == 'failure' && needs.environment-check.outputs.docker_status == 'success' }}
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            const prNumber = context.payload.pull_request?.number;
-            
-            if (!prNumber) return;
-            
-            const comment = `## ❌ CI 測試失敗
-            
-            **階段**：單元測試 / 集成測試
-            
-            ### 🔍 常見原因
-            - 新增代碼未通過現有測試
-            - 測試環境配置不正確
-            - 依賴版本不兼容
-            
-            ### ✅ 修正步驟
-            
-            **本地運行測試**：
-            \`\`\`bash
-            # 1. 安裝依賴
-            npm install --workspaces
-            
-            # 2. 運行測試
-            npm test
-            
-            # 3. 查看特定服務測試
-            cd core/contracts/contracts-L1/contracts && npm test
-            cd mcp-servers && npm test
-            \`\`\`
-            
-            **調試技巧**：
-            - 運行特定測試：\`npm test -- --testNamePattern="test name"\`
-            - 啟用詳細輸出：\`npm test -- --verbose\`
-            - 檢查測試覆蓋率：\`npm run test:coverage\`
-            
-            ### 📚 相關資源
-            - [測試編寫指南](./docs/testing-guide.md)
-            - [測試覆蓋率要求](./docs/coverage-requirements.md)
-            
-            ---
-            *此評論由 CI 自動生成*`;
-            
-            github.rest.issues.createComment({
-              issue_number: prNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+
       
-      # ========== 情況 4：成功 ==========
-      - name: 💬 評論：CI 通過
+      # ========== 情況 3：CI 工具驗證成功 ==========
+      - name: 💬 評論：CI 工具驗證成功
         if: ${{ success() && needs.environment-check.outputs.docker_status == 'success' }}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
@@ -355,18 +306,24 @@ jobs:
             
             if (!prNumber) return;
             
-            const comment = `## ✅ CI 檢查通過
+            const comment = `## ✅ CI 工具驗證通過
             
-            所有檢查項已成功完成：
+            CI 工具相關文件的驗證已成功完成：
             - ✓ 環境檢查
-            - ✓ Docker 構建
-            - ✓ 單元測試
-            - ✓ 集成測試
+            - ✓ Docker Compose 配置驗證
+            - ✓ 環境檢查腳本驗證
             
-            此 PR 已準備好進行代碼審查。
+            ### 📌 注意
+            此 PR 修改了 CI 相關文件。完整的項目 CI 檢查由其他專門的 workflows 執行：
+            - Core Services CI
+            - Integration & Deployment
+            - 其他專案特定的 CI workflows
+            
+            ### 🤖 動態互動 CI
+            新的**動態 CI 助手**將監控所有 CI workflows，並在失敗時提供智能診斷和互動式反饋。
             
             ---
-            *此評論由 CI 自動生成*`;
+            *此評論由 CI 工具驗證系統自動生成*`;
             
             github.rest.issues.createComment({
               issue_number: prNumber,
@@ -391,8 +348,8 @@ jobs:
               labels.push('env-error');
             }
             
-            if ("${{ needs.build-and-test.result }}" === "failure") {
-              labels.push('build-failed');
+            if ("${{ needs.validate-ci-tools.result }}" === "failure") {
+              labels.push('ci-tools-failed');
             }
             
             // 先獲取現有標籤，避免重複添加
