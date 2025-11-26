@@ -38,7 +38,8 @@ RUN npm install -g \
 USER root
 
 # Install Python dependencies for life system scripts
-RUN pip3 install --no-cache-dir \
+# Note: --break-system-packages is required for PEP 668 compliance in externally managed environments
+RUN pip3 install --no-cache-dir --break-system-packages \
     pyyaml \
     requests \
     psycopg2-binary \
