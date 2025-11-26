@@ -377,7 +377,7 @@ jobs:
           if [ "$DRY_RUN" != "true" ]; then
             kubectl apply -f canary-deploy.yaml
           else
-            echo "[DRY-RUN] 模擬部署，不實際執行"
+            echo "【演練模式】模擬部署，不實際執行"
           fi
 
           echo "監控金絲雀部署，最長 5 分鐘..."
@@ -406,9 +406,9 @@ jobs:
             echo "部署到 ${PERCENTAGE}% 流量..."
             if [ "$DRY_RUN" != "true" ]; then
               kubectl set env deployment/autonomous-system TRAFFIC_PERCENTAGE=$PERCENTAGE
-              # 注意：此命令僅改變 deployment 的環境變數，若需真正流量分配，請配合 Service Mesh (如 Istio) 或 Ingress 加權路由設定
+              # 注意：此命令僅改變部署的環境變數，若需真正流量分配，請配合服務網格（如 Istio）或 Ingress 加權路由設定
             else
-              echo "[DRY-RUN] 模擬流量切換，不實際執行"
+              echo "【演練模式】模擬流量切換，不實際執行"
             fi
 
             sleep 120
