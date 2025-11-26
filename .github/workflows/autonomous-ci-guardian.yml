@@ -148,48 +148,7 @@ jobs:
           PREDICTED_FAILURES: ${{ steps.ml-predict.outputs.failures }}
           CRITICAL_VULNS: ${{ steps.security-scan.outputs.critical_vulnerabilities }}
         run: |
-          cat > risk_assessment.py << 'EOF'
-          import json
-          import os
 
-          predictions = json.loads(os.environ.get('PREDICTED_FAILURES', '{}'))
-          critical_vulns = int(os.environ.get('CRITICAL_VULNS', '0'))
-
-          risk_score = 0
-          risk_score += predictions.get('risk_score', 0) * 40
-
-          high_risk_areas = set(predictions.get('high_risk_areas', []))
-          critical_areas = {'security', 'memory', 'performance'}
-          overlap = len(critical_areas.intersection(high_risk_areas))
-          risk_score += (overlap / len(critical_areas)) * 30
-
-          risk_score += min(critical_vulns * 10, 30)
-
-          if risk_score > 70:
-              level = "CRITICAL"
-              proceed = False
-          elif risk_score > 50:
-              level = "HIGH"
-              proceed = False
-          elif risk_score > 30:
-              level = "MEDIUM"
-              proceed = True
-          else:
-              level = "LOW"
-              proceed = True
-
-          recommendation = f"風險等級：{level}，建議：{'繼續部署' if proceed else '停止部署，需人工審查'}"
-          output = {
-              'level': level,
-              'proceed': proceed,
-              'score': risk_score,
-              'recommendation': recommendation,
-          }
-
-          print(json.dumps(output, ensure_ascii=False))
-          EOF
-
-          python3 risk_assessment.py > assessment.json
           cat assessment.json
 
           LEVEL=$(cat assessment.json | jq -r '.level')
@@ -377,7 +336,7 @@ jobs:
           if [ "$DRY_RUN" != "true" ]; then
             kubectl apply -f canary-deploy.yaml
           else
-            echo "【演練模式】模擬部署，不實際執行"
+
           fi
 
           echo "監控金絲雀部署，最長 5 分鐘..."
