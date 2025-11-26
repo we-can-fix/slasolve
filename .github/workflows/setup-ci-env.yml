@@ -1,0 +1,60 @@
+---
+name: 初始化 CI 環境
+
+on:
+  workflow_call:
+    outputs:
+      env_ready:
+        description: "環境是否準備就緒"
+        value: ${{ jobs.setup.outputs.ready }}
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.final-check.outputs.ready }}
+    
+    steps:
+      - name: 📥 檢出代碼
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      
+      - name: 🔧 檢查並安裝 Docker Compose（如需要）
+        run: |
+          if command -v docker-compose &> /dev/null; then
+            echo "✓ docker-compose 已存在"
+            docker-compose --version
+          elif docker compose version &> /dev/null; then
+            echo "✓ docker compose plugin 已存在"
+            docker compose version
+          else
+            echo "安裝 Docker Compose..."
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" \
+              -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            docker-compose --version
+          fi
+      
+      - name: 🧹 清理磁盤空間
+        run: |
+          echo "清理舊 Docker 資源..."
+          docker system prune -a -f --volumes || true
+          echo "磁盤使用狀況："
+          df -h
+      
+      - name: ✅ 最終檢查
+        id: final-check
+        run: |
+          echo "檢查環境..."
+          docker --version
+          if command -v docker-compose &> /dev/null; then
+            docker-compose --version
+          else
+            docker compose version
+          fi
+          node --version
+          npm --version
+          echo "ready=true" >> $GITHUB_OUTPUT
+          echo "✅ 環境準備完成"

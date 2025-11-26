@@ -172,3 +172,48 @@ For complete documentation, see:
 - [API Documentation](autonomous-system/docs-examples/API_DOCUMENTATION.md)
 - [Governance Matrix](autonomous-system/docs-examples/governance_matrix.yaml)
 
+## 🔧 CI 故障排除
+
+若 CI 失敗，請遵循以下步驟：
+
+### 快速診斷
+
+1. **查看 PR 自動評論**
+   - CI 系統會自動在 PR 中留言，說明錯誤原因與修正步驟
+   - 評論包含具體的命令和解決方案
+
+2. **運行環境檢查**
+   ```bash
+   bash scripts/check-env.sh
+   ```
+   此腳本會檢查：
+   - Docker 安裝
+   - Docker Compose 安裝
+   - Node.js 版本（需要 >= 18）
+   - Git 安裝
+   - 磁盤空間
+
+3. **參考故障排除文檔**
+   詳細的錯誤解決方案請參考 [CI 故障排除 Runbook](./docs/ci-troubleshooting.md)
+
+### 常見問題
+
+| 問題 | 快速解決 |
+|------|---------|
+| Docker Compose 未安裝 | `curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose` |
+| 磁盤空間不足 | `docker system prune -a` |
+| 測試失敗 | `npm install --workspaces && npm test` |
+
+### CI Workflow 結構
+
+CI 自動評論系統包含：
+- **環境檢查階段**：驗證 Docker、Docker Compose、Node.js
+- **構建與測試階段**：構建鏡像、運行測試
+- **自動評論階段**：生成 PR 評論、添加標籤
+
+### 相關資源
+
+- [CI 自動評論 Workflow](../.github/workflows/ci-auto-comment.yml)
+- [環境檢查腳本](./scripts/check-env.sh)
+- [CI 故障排除完整指南](./docs/ci-troubleshooting.md)
+
