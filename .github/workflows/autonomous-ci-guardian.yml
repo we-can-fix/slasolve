@@ -375,20 +375,21 @@ jobs:
           docker-compose build --no-cache
           docker-compose up -d
 
-          sleep 5
-          curl -f http://localhost:8001/health
-          echo "✅ 完整部署成功"
+            echo "監控金絲雀部署 5 分鐘..."
+            sleep 300
 
-  realtime-monitoring:
-    needs: auto-remediation
-    runs-on: ubuntu-latest
-    if: always()
+            ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}')
+            if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+              echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE"
+              exit 1
+            fi
 
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 📊 Collect real-time metrics
+            echo "✅ 金絲雀部署成功"
+          else
+            echo "[DRY-RUN] 模擬部署，不實際執行"
+            echo "[DRY-RUN] 跳過監控與指標檢查"
+            echo "✅ [DRY-RUN] 金絲雀部署流程模擬完成"
+          fi
         id: metrics
         run: |
           cat > collect_metrics.sh << 'BASH'
