@@ -31,6 +31,27 @@ interface RateLimitStore {
 }
 
 /**
+ * Redis 客戶端接口
+ * 定義與 Redis 客戶端交互所需的最小方法集，支持多種 Redis 客戶端實現
+ * (如 ioredis, node-redis 等)
+ */
+interface RedisClientInterface {
+  get(key: string): Promise<string | null>;
+  multi(): RedisMultiInterface;
+  del(key: string): Promise<number>;
+}
+
+/**
+ * Redis Multi/Pipeline 接口
+ * 用於批量執行 Redis 命令的事務或管道操作
+ */
+interface RedisMultiInterface {
+  incr(key: string): RedisMultiInterface;
+  pexpire(key: string, milliseconds: number): RedisMultiInterface;
+  exec(): Promise<Array<[Error | null, unknown]>>;
+}
+
+/**
  * 內存存儲實現 (適用於單機部署)
  */
 class MemoryStore implements RateLimitStore {
@@ -88,7 +109,7 @@ class MemoryStore implements RateLimitStore {
  * Redis 存儲實現 (適用於分布式部署)
  */
 class RedisStore implements RateLimitStore {
-  constructor(private redisClient: any) {}
+  constructor(private redisClient: RedisClientInterface) {}
 
   async get(key: string): Promise<number | null> {
     const value = await this.redisClient.get(key);
@@ -101,7 +122,18 @@ class RedisStore implements RateLimitStore {
     multi.pexpire(key, windowMs);
     
     const results = await multi.exec();
-    return results[0][1]; // incr 的結果
+    // 錯誤檢查與型別驗證
+    if (!results || results.length === 0) {
+      throw new Error('Redis multi command returned no results');
+    }
+    const [error, value] = results[0];
+    if (error) {
+      throw new Error(`Redis incr failed: ${error.message}`);
+    }
+    if (typeof value !== 'number') {
+      throw new Error(`Unexpected Redis incr result type: ${typeof value}`);
+    }
+    return value;
   }
 
   async reset(key: string): Promise<void> {
