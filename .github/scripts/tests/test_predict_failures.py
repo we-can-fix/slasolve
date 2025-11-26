@@ -243,15 +243,15 @@ class TestFailurePredictor:
         predictor = FailurePredictor()
         patterns = predictor.analyze_patterns(commits)
         
-        # 'docker' appears in 1 commit
+        # 'docker' in commit 1
         assert patterns.docker == 1
-        # 'tests' appears in 1 commit, 'test' appears in 1 commit
+        # 'tests' in commit 1, 'test' in commit 3
         assert patterns.test == 2
-        # 'memory' appears in 1 commit
+        # 'memory' in commit 2
         assert patterns.memory == 1
-        # 'security' appears in 1 commit
+        # 'security' in commit 2
         assert patterns.security == 1
-        # 'performance' appears in 1 commit
+        # 'performance' in commit 3
         assert patterns.performance == 1
 
     def test_analyze_patterns_case_insensitive(self):

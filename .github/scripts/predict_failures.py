@@ -131,8 +131,9 @@ class FailurePredictor:
             Risk score between 0.0 and 1.0
         """
         pattern_dict = patterns.to_dict()
-        total = sum(pattern_dict.values()) or 1
-        max_pattern = max(pattern_dict.values())
+        values = list(pattern_dict.values())
+        total = sum(values) or 1
+        max_pattern = max(values) if values else 0
         
         return max_pattern / total
 
