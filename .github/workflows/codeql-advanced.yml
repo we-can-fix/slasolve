@@ -70,7 +70,7 @@ jobs:
           "analysis_result": "${{ needs.analyze.result }}",
           "languages": "javascript, python"
         }
-      error-logs: ${{ needs.analyze.result == 'failure' && 'CodeQL 安全掃描發現問題，請查看 Security 頁籤' || '' }}
+      error-logs: ${{ needs.analyze.result == 'failure' && format('CodeQL 安全掃描發現問題。\n1. 查看 Security 頁籤：https://github.com/{0}/security/code-scanning\n2. 檢查 javascript 和 python 的掃描結果\n3. 修復高嚴重性問題後重新執行', github.repository) || '' }}
     permissions:
       contents: read
       pull-requests: write

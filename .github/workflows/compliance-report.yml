@@ -265,7 +265,7 @@ jobs:
           "report_result": "${{ needs.generate-compliance-report.result }}",
           "report_type": "${{ github.event.inputs.report_type || 'full' }}"
         }
-      error-logs: ${{ needs.generate-compliance-report.result == 'failure' && '合規報告生成失敗，請查看詳細日誌' || '' }}
+      error-logs: ${{ needs.generate-compliance-report.result == 'failure' && format('合規報告生成失敗。\n1. 檢查 API 權限是否充足\n2. 確認 Security 頁籤資料可存取\n3. 報告類型：{0}', github.event.inputs.report_type || 'full') || '' }}
     permissions:
       contents: read
       pull-requests: write

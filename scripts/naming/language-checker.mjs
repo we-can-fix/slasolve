@@ -69,12 +69,7 @@ function scanDirectory(dir, results = []) {
   for (const entry of entries) {
     const fullPath = join(dir, entry);
     
-    // Skip if excluded directory
-    if (CONFIG.excludeDirs.includes(entry)) {
-      continue;
-    }
-    
-    // Use lstat to handle symlinks properly
+    // Use statSync with error handling to follow symlinks safely
     let stat;
     try {
       stat = statSync(fullPath, { throwIfNoEntry: false });
@@ -86,7 +81,10 @@ function scanDirectory(dir, results = []) {
     }
 
     if (stat.isDirectory()) {
-      scanDirectory(fullPath, results);
+      // Skip if excluded directory (check after confirming it's a directory)
+      if (!CONFIG.excludeDirs.includes(entry)) {
+        scanDirectory(fullPath, results);
+      }
     } else if (stat.isFile()) {
       const result = checkFile(fullPath);
       if (result) results.push(result);

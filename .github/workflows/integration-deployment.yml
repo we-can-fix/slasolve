@@ -498,6 +498,7 @@ jobs:
           echo "🎉 **所有層級已完成持續整合檢查！系統已準備好進行部署。**" >> $GITHUB_STEP_SUMMARY
   
   # ==================== 互動式客服整合 ====================
+  # Note: 全時反饋型 - 在所有事件都提供互動式反饋
   interactive-service:
     name: 🤖 Integration & Deployment 互動式客服
     needs: [tier1-contracts-l1, tier2-mcp-servers, tier3-autofix-bot, tier4-dashboard, docker-integration, production-readiness-report]
@@ -514,7 +515,7 @@ jobs:
           "tier4_dashboard": "${{ needs.tier4-dashboard.result }}",
           "docker_integration": "${{ needs.docker-integration.result }}"
         }
-      error-logs: ${{ (needs.tier1-contracts-l1.result == 'failure' || needs.tier2-mcp-servers.result == 'failure' || needs.docker-integration.result == 'failure') && '檢測到整合或部署失敗，請查看詳細日誌' || '' }}
+      error-logs: ${{ (needs.tier1-contracts-l1.result == 'failure' || needs.tier2-mcp-servers.result == 'failure' || needs.tier3-autofix-bot.result == 'failure' || needs.tier4-dashboard.result == 'failure' || needs.docker-integration.result == 'failure') && '檢測到整合或部署失敗，請查看詳細日誌' || '' }}
     permissions:
       contents: read
       pull-requests: write

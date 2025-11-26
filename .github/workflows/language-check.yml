@@ -38,6 +38,7 @@ jobs:
           echo "✅ 語言檢查已執行" >> $GITHUB_STEP_SUMMARY
   
   # ==================== 互動式客服整合 ====================
+  # Note: 全時反饋型 - 在所有事件都提供互動式反饋
   interactive-service:
     name: 🤖 Language Check 互動式客服
     needs: [language-check]
@@ -50,7 +51,7 @@ jobs:
         {
           "check_result": "${{ needs.language-check.result }}"
         }
-      error-logs: ${{ needs.language-check.result == 'failure' && '語言合規性檢查失敗，請確保文檔遵循語言規範' || '' }}
+      error-logs: ${{ needs.language-check.result == 'failure' && '語言合規性檢查失敗。請確保：\n1. .md/.yml 檔案使用繁體中文\n2. 排除目錄設定正確\n3. 查看詳細錯誤訊息以了解哪些檔案不符規範' || '' }}
     permissions:
       contents: read
       pull-requests: write
