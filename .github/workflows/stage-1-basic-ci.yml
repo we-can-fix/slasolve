@@ -65,19 +65,20 @@ jobs:
         if: always()
         working-directory: core/contracts/contracts-L1/contracts
         run: |
-          # 嘗試提取覆蓋率資訊
-          if [ -f coverage/coverage-summary.json ]; then
-            COVERAGE=$(node -e "
-              const fs = require('fs');
-              const data = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
-              const statements = data.total.statements.pct;
-              console.log(statements);
-            ")
-            echo "覆蓋率: ${COVERAGE}%"
-            echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          # 嘗試從測試輸出提取覆蓋率資訊
+          if [ -f test-output.log ]; then
+            # 從測試輸出中提取 "All files" 行的 Statements 覆蓋率
+            COVERAGE=$(grep "All files" test-output.log | grep -oP '\|\s+\K[0-9.]+' | head -1)
+            if [ -n "$COVERAGE" ]; then
+              echo "覆蓋率: ${COVERAGE}%"
+              echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+            else
+              echo "coverage=N/A" >> $GITHUB_OUTPUT
+              echo "無法從測試輸出提取覆蓋率資訊"
+            fi
           else
             echo "coverage=N/A" >> $GITHUB_OUTPUT
-            echo "無法取得覆蓋率資訊"
+            echo "測試輸出檔案不存在"
           fi
       
       - name: 📝 自動評論（基礎版）
