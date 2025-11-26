@@ -305,6 +305,10 @@ echo "=== 災難恢復測試 ==="
 # 1. 備份當前狀態（加密）
 echo "1. 備份當前狀態（加密）..."
 # 備份檔案將壓縮並以 AES-256-CBC 加密，密碼請設定 PG_BACKUP_PASS 環境變數
+if [ -z "${PG_BACKUP_PASS:-}" ]; then
+  echo "錯誤：未設定 PG_BACKUP_PASS 環境變數" >&2
+  exit 1
+fi
 docker-compose exec -T db pg_dump -U postgres | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:PG_BACKUP_PASS > backup-$(date +%Y%m%d).sql.gz.enc
 git tag dr-test-$(date +%Y%m%d)
 
