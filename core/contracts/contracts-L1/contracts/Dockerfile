@@ -33,10 +33,11 @@ COPY --chown=nodejs:nodejs src ./src
 RUN npm config set strict-ssl false || true
 
 # 升級 npm 以修復 "Exit handler never called" 問題  
-RUN npm install -g npm@10 || echo "npm upgrade failed, continuing with existing version"
+RUN npm install -g npm@10 && npm --version || \
+    (echo "Warning: npm upgrade failed, using system version: $(npm --version)" && exit 0)
 
-# 安裝依賴（先以 root 安裝以避免權限問題）
-RUN npm ci --omit=optional || npm install --omit=optional
+# 安裝依賴（失敗時記錄錯誤並終止建置，避免自動 fallback）
+RUN npm ci --omit=optional || (echo "npm ci failed, aborting build." && exit 1)
 RUN npm run build
 RUN npm prune --production
 RUN npm cache clean --force
