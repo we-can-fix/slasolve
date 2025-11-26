@@ -274,8 +274,8 @@ export class AuditLogQuery {
    * 根據用戶 ID 查詢審計日誌
    */
   static async findByUserId(
-    userId: string,
-    limit: number = 100
+    _userId: string,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     // 實現依賴於實際的存儲後端
     // 這裡提供接口定義
@@ -286,9 +286,9 @@ export class AuditLogQuery {
    * 根據時間範圍查詢審計日誌
    */
   static async findByTimeRange(
-    startTime: Date,
-    endTime: Date,
-    limit: number = 100
+    _startTime: Date,
+    _endTime: Date,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     throw new Error('Not implemented - requires storage backend');
   }
@@ -297,8 +297,8 @@ export class AuditLogQuery {
    * 根據動作類型查詢審計日誌
    */
   static async findByAction(
-    action: string,
-    limit: number = 100
+    _action: string,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     throw new Error('Not implemented - requires storage backend');
   }
@@ -307,8 +307,8 @@ export class AuditLogQuery {
    * 根據資源類型查詢審計日誌
    */
   static async findByResource(
-    resource: string,
-    limit: number = 100
+    _resource: string,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     throw new Error('Not implemented - requires storage backend');
   }
