@@ -815,9 +815,18 @@ jobs:
           import os
           # 動態計算工作流指標（此範例假設有 6 個 job，僅 1 個成功，其餘失敗/略過）
           total_jobs = 6
-          successful_jobs = int(os.environ.get("SUCCESSFUL_JOBS", "1"))
-          failed_jobs = int(os.environ.get("FAILED_JOBS", str(total_jobs - successful_jobs)))
-          skipped_jobs = int(os.environ.get("SKIPPED_JOBS", "0"))
+          try:
+              successful_jobs = int(os.environ.get("SUCCESSFUL_JOBS", "1"))
+          except ValueError:
+              successful_jobs = 1  # 安全預設值
+          try:
+              failed_jobs = int(os.environ.get("FAILED_JOBS", str(total_jobs - successful_jobs)))
+          except ValueError:
+              failed_jobs = total_jobs - successful_jobs  # 安全預設值
+          try:
+              skipped_jobs = int(os.environ.get("SKIPPED_JOBS", "0"))
+          except ValueError:
+              skipped_jobs = 0  # 安全預設值
           # SLA 可用性計算：成功 job / 總 job
           current_availability = successful_jobs / total_jobs if total_jobs > 0 else 0.0
           # MTTR/MTBF 暫以靜態值，並註明為基準值
