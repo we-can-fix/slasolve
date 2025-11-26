@@ -36,10 +36,10 @@ jobs:
     
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
     
     - name: Setup Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -212,7 +212,7 @@ jobs:
     
     - name: Create Compliance Issue
       if: steps.metrics.outputs.vuln_critical > 0 || steps.metrics.outputs.codeql_critical > 0
-      uses: actions/github-script@v8
+      uses: actions/github-script@v7
       with:
         script: |
           const criticalCount = parseInt('${{ steps.metrics.outputs.vuln_critical }}') + 
@@ -249,3 +249,24 @@ jobs:
         echo "- **CodeQL Alerts**: ${{ steps.metrics.outputs.codeql_open }} (${{ steps.metrics.outputs.codeql_critical }} critical)" >> $GITHUB_STEP_SUMMARY
         echo "- **Secret Scanning**: ${{ steps.metrics.outputs.secret_open }} open" >> $GITHUB_STEP_SUMMARY
         echo "- **Vulnerabilities**: ${{ steps.metrics.outputs.vuln_open }} (${{ steps.metrics.outputs.vuln_critical }} critical)" >> $GITHUB_STEP_SUMMARY
+  
+  # ==================== 互動式客服整合 ====================
+  # Note: 僅在手動觸發時提供互動式反饋，月度自動報告透過 issue 追蹤
+  interactive-service:
+    name: 🤖 Compliance Report 互動式客服
+    needs: [generate-compliance-report]
+    if: always() && github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "Security Compliance Report"
+      ci-status: ${{ needs.generate-compliance-report.result }}
+      ci-context: |
+        {
+          "report_result": "${{ needs.generate-compliance-report.result }}",
+          "report_type": "${{ github.event.inputs.report_type || 'full' }}"
+        }
+      error-logs: ${{ needs.generate-compliance-report.result == 'failure' && format('合規報告生成失敗。\n1. 檢查 API 權限是否充足\n2. 確認 Security 頁籤資料可存取\n3. 報告類型：{0}', github.event.inputs.report_type || 'full') || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write

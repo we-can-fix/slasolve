@@ -2,6 +2,9 @@
 name: 動態互動 CI 助手
 
 # 此 workflow 監控其他 CI workflows，提供智能分析和互動式反饋
+# 💡 設計理念：專注於失敗診斷和互動反饋，不發布成功通知（避免資源浪費）
+# 🔍 失敗時：提供智能診斷、修復建議、互動命令
+# ✅ 成功時：僅清理標籤，不發布評論
 on:
   workflow_run:
     workflows:
@@ -10,6 +13,9 @@ on:
       - "Auto-Fix Bot"
       - "Compliance Report Generator"
       - "Stage 1: Basic CI"
+      - "Language Compliance Check"
+      - "CodeQL Advanced Security Scan"
+      - "Phase 1 Infrastructure Integration"
     types:
       - completed
   pull_request:
@@ -33,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_run' || github.event_name == 'pull_request'
     outputs:
-      has_failures: ${{ steps.check-status.outputs.has_failures }}
-      failed_workflows: ${{ steps.check-status.outputs.failed_workflows }}
+      has_failures: ${{ steps.check-status.outputs.has_failures || steps.set-defaults.outputs.has_failures }}
+      failed_workflows: ${{ steps.check-status.outputs.failed_workflows || steps.set-defaults.outputs.failed_workflows }}
       pr_number: ${{ steps.get-pr.outputs.pr_number }}
     
     steps:
@@ -68,9 +74,17 @@ jobs:
             core.setOutput('pr_number', prNumber);
             return prNumber;
       
+      - name: 🔧 設定預設輸出值
+        id: set-defaults
+        if: ${{ !steps.get-pr.outputs.pr_number }}
+        run: |
+          echo "has_failures=false" >> $GITHUB_OUTPUT
+          echo "failed_workflows=[]" >> $GITHUB_OUTPUT
+          echo "No PR number found, setting default outputs"
+      
       - name: 🔍 檢查 CI 狀態
         id: check-status
-        if: steps.get-pr.outputs.pr_number
+        if: steps.get-pr.outputs.pr_number != ''
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
@@ -132,7 +146,7 @@ jobs:
     name: 🔬 診斷失敗原因
     needs: analyze-ci-status
     runs-on: ubuntu-latest
-    if: needs.analyze-ci-status.outputs.has_failures == 'true'
+    if: needs.analyze-ci-status.outputs.has_failures == 'true' && needs.analyze-ci-status.outputs.pr_number != ''
     outputs:
       diagnosis_report: ${{ steps.diagnose.outputs.report }}
     
@@ -281,7 +295,7 @@ jobs:
     name: 💬 生成互動式評論
     needs: [analyze-ci-status, diagnose-failures]
     runs-on: ubuntu-latest
-    if: needs.analyze-ci-status.outputs.has_failures == 'true' && needs.analyze-ci-status.outputs.pr_number
+    if: needs.analyze-ci-status.outputs.has_failures == 'true' && needs.analyze-ci-status.outputs.pr_number != ''
     
     steps:
       - name: 📥 檢出代碼
@@ -493,13 +507,15 @@ jobs:
             });
 
   # ============================================
-  # 成功時清理標籤
+  # 成功時清理標籤（不發布評論）
   # ============================================
+  # 注意：根據用戶要求，成功時僅清理標籤，不發布評論
+  # 原因：成功通知不具有意義且浪費資源，應專注於失敗診斷和互動反饋
   cleanup-on-success:
-    name: 🎉 清理成功後的標籤
+    name: 🧹 清理成功後的標籤
     needs: analyze-ci-status
     runs-on: ubuntu-latest
-    if: needs.analyze-ci-status.outputs.has_failures == 'false' && needs.analyze-ci-status.outputs.pr_number
+    if: needs.analyze-ci-status.outputs.has_failures == 'false' && needs.analyze-ci-status.outputs.pr_number != ''
     
     steps:
       - name: 🧹 移除失敗標籤
@@ -516,6 +532,8 @@ jobs:
               'env-error'
             ];
             
+            console.log('✅ CI 檢查成功，清理失敗標籤（不發布成功評論）');
+            
             for (const label of labelsToRemove) {
               try {
                 await github.rest.issues.removeLabel({
@@ -524,56 +542,11 @@ jobs:
                   issue_number: prNumber,
                   name: label
                 });
-                console.log(`Removed label: ${label}`);
+                console.log(`✅ 已移除標籤: ${label}`);
               } catch (error) {
                 // 標籤不存在，忽略錯誤
-                console.log(`Label ${label} not found, skipping`);
+                console.log(`ℹ️ 標籤 ${label} 不存在，跳過`);
               }
             }
-      
-      - name: 💬 發布成功評論
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            const prNumber = ${{ needs.analyze-ci-status.outputs.pr_number }};
             
-            const comment = `## ✅ CI 檢查全部通過！
-            
-            恭喜！所有 CI 檢查已成功完成。您的代碼已準備好進行審查。
-            
-            ### 📋 下一步
-            
-            - 🔍 等待代碼審查
-            - 📝 確保 PR 描述清晰完整
-            - 🎯 回應審查者的反饋
-            
-            *此評論由動態 CI 助手自動生成*`;
-            
-            // 檢查是否已有機器人評論
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber
-            });
-            
-            const botComments = comments.filter(c => 
-              c.user.type === 'Bot' && c.body.includes('動態 CI 助手')
-            );
-            
-            if (botComments.length > 0) {
-              // 更新現有評論
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComments[0].id,
-                body: comment
-              });
-            } else {
-              // 創建新評論
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: comment
-              });
-            }
+            console.log('✅ 標籤清理完成。專注於失敗診斷，不發布成功通知。');

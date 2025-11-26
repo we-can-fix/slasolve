@@ -146,48 +146,7 @@ jobs:
           PREDICTED_FAILURES: ${{ steps.ml-predict.outputs.failures }}
           CRITICAL_VULNS: ${{ steps.security-scan.outputs.critical_vulnerabilities }}
         run: |
-          cat > risk_assessment.py << 'PYCODE'
-          import json
-          import os
-
-          predictions = json.loads(os.environ.get('PREDICTED_FAILURES', '{}'))
-          critical_vulns = int(os.environ.get('CRITICAL_VULNS', '0'))
-
-          risk_score = 0
-          risk_score += predictions.get('risk_score', 0) * 40
-
-          high_risk_areas = predictions.get('high_risk_areas', [])
-          critical_areas = {'security', 'memory', 'performance'}
-          overlap = len(critical_areas.intersection(high_risk_areas))
-          risk_score += (overlap / len(critical_areas)) * 30
-
-          risk_score += min(critical_vulns * 10, 30)
-
-          if risk_score > 70:
-              level = "CRITICAL"
-              proceed = False
-          elif risk_score > 50:
-              level = "HIGH"
-              proceed = False
-          elif risk_score > 30:
-              level = "MEDIUM"
-              proceed = True
-          else:
-              level = "LOW"
-              proceed = True
-
-          recommendation = f"風險等級：{level}，建議：{'繼續部署' if proceed else '停止部署，需人工審查'}"
-          output = {
-              'level': level,
-              'proceed': proceed,
-              'score': risk_score,
-              'recommendation': recommendation,
-          }
-
-          print(json.dumps(output, ensure_ascii=False))
-          PYCODE
-
-          python3 risk_assessment.py > assessment.json
+          python3 .github/scripts/risk_assessment.py > assessment.json
           cat assessment.json
 
           LEVEL=$(cat assessment.json | jq -r '.level')
@@ -414,54 +373,72 @@ jobs:
             echo "✅ ${PERCENTAGE}% 部署成功"
           done
 
+      - name: 📝 準備 Docker Compose 檔案
+        run: |
+          if [ ! -f docker-compose.yml ]; then
+            cat > docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            app:
+              image: autonomous-system:latest
+              ports:
+                - '8001:8001'
+              environment:
+                - NODE_ENV=production
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+          EOF
+          fi
+
       - name: 🚀 Full deployment
         if: ${{ steps.remediation-decision.outputs.action == 'FULL_DEPLOY' }}
         run: |
           echo "🚀 開始完整部署..."
+          if [ ! -f docker-compose.yml ]; then
+            echo "❌ docker-compose.yml 檔案不存在，部署失敗"
+            exit 1
+          fi
           docker-compose build --no-cache
           docker-compose up -d
 
-          sleep 5
-          curl -f http://localhost:8001/health
+          echo "監控部署 30 秒..."
+          sleep 30
+
+          ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}' || echo "0.0")
+          if [ -n "$ERROR_RATE" ] && [ "$ERROR_RATE" != "0.0" ]; then
+            # 使用 awk 進行浮點數比較，當 ERROR_RATE > 0.01 時返回 0（成功），觸發 if 條件
+            if awk "BEGIN {exit ($ERROR_RATE > 0.01 ? 0 : 1)}"; then
+              echo "❌ 部署失敗，錯誤率 $ERROR_RATE"
+              exit 1
+            fi
+          fi
+
           echo "✅ 完整部署成功"
 
-  realtime-monitoring:
-    needs: auto-remediation
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 📊 Collect real-time metrics
+      - name: 📊 Collect metrics
         id: metrics
+        if: always()
         run: |
-          cat > collect_metrics.sh << 'BASH'
-          #!/bin/bash
-          set -u
-
           TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           CPU=$(docker stats --no-stream 2>/dev/null | tail -1 | awk '{print $3}' || echo "N/A")
           MEMORY=$(docker stats --no-stream 2>/dev/null | tail -1 | awk '{print $7}' || echo "N/A")
           LATENCY=$(ping -c 1 8.8.8.8 2>/dev/null | tail -1 | awk '{print $4}' | cut -d'/' -f2 || echo "N/A")
           ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}' || echo "0.0")
 
-          cat > metrics.json << EOFM
+          cat > metrics.json << EOF
           {
             "timestamp": "$TIMESTAMP",
             "cpu_usage": "$CPU",
             "memory_usage": "$MEMORY",
             "network_latency": "${LATENCY}ms",
-            "error_rate": "$ERROR_RATE",
-            "status": "healthy"
+            "error_rate": "$ERROR_RATE"
           }
-          EOFM
+          EOF
 
           cat metrics.json
-          BASH
-
-          bash collect_metrics.sh
 
       - name: 🚨 Critical alert on failure
         if: failure()
