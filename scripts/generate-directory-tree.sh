@@ -97,7 +97,7 @@ else
   
   # 添加檔案排除條件
   for file in "${EXCLUDE_FILES[@]}"; do
-    FIND_ARGS+=(-name "${file}" -o)
+    FIND_ARGS+=(-name "${file}" -prune -o)
   done
   
   # 添加列印條件並執行
