@@ -11,7 +11,6 @@
 import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-import json
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
