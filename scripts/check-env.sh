@@ -81,7 +81,9 @@ fi
 # 磁盤空間檢查
 # ============================================
 echo -e "\n${BLUE}[磁盤空間]${NC}"
-DISK_USAGE=$(df -h . 2>/dev/null | awk 'NR==2 {print $5}' | sed 's/%//' || echo "0")
+# 使用 df 不帶 -h 選項以獲得更可靠的輸出格式，然後計算百分比
+DISK_INFO=$(df . 2>/dev/null | awk 'NR==2 {printf "%.0f", ($3/$2)*100}' || echo "0")
+DISK_USAGE=${DISK_INFO:-0}
 if [ "$DISK_USAGE" -gt 80 ]; then
     echo -e "${YELLOW}⚠️  磁盤使用率：${DISK_USAGE}%（建議清理）${NC}"
     echo -e "   執行：${YELLOW}docker system prune -a${NC}"

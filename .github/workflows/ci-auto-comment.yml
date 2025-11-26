@@ -116,7 +116,10 @@ jobs:
       
       - name: 🔨 構建 Docker 鏡像
         id: build
+        shell: bash
         run: |
+          set -o pipefail
+          
           # 使用 docker compose 或 docker-compose
           if command -v docker-compose &> /dev/null; then
             COMPOSE_CMD="docker-compose"
@@ -124,8 +127,7 @@ jobs:
             COMPOSE_CMD="docker compose"
           fi
           
-          $COMPOSE_CMD build --no-cache 2>&1 | tee build.log
-          if [ ${PIPESTATUS[0]} -eq 0 ]; then
+          if $COMPOSE_CMD build --no-cache 2>&1 | tee build.log; then
             echo "status=success" >> $GITHUB_OUTPUT
           else
             echo "status=failed" >> $GITHUB_OUTPUT
@@ -137,20 +139,16 @@ jobs:
       
       - name: 🧪 運行測試
         id: test
+        shell: bash
         run: |
-          # 使用 docker compose 或 docker-compose
-          if command -v docker-compose &> /dev/null; then
-            COMPOSE_CMD="docker-compose"
-          else
-            COMPOSE_CMD="docker compose"
-          fi
+          set -o pipefail
           
-          # 使用現有的 npm workspace 測試而非 Docker 測試（避免已知的 Docker npm ci 問題）
-          npm install --workspaces 2>&1 | tee test.log
-          npm test 2>&1 | tee -a test.log
-          TEST_EXIT=$?
+          # 注意：此階段使用主機環境運行測試而非 Docker 容器
+          # 原因：已知 Docker 容器內 npm ci 存在 "Exit handler never called" 問題
+          # 這與現有的 core-services-ci.yml 方法一致，確保環境一致性
+          # 參考：core-services-ci.yml 中各服務的測試方法
           
-          if [ $TEST_EXIT -eq 0 ]; then
+          if npm install --workspaces 2>&1 | tee test.log && npm test 2>&1 | tee -a test.log; then
             echo "status=success" >> $GITHUB_OUTPUT
           else
             echo "status=failed" >> $GITHUB_OUTPUT

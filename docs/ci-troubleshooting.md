@@ -206,13 +206,29 @@ Expected version ">=18.0.0".
 # 檢查當前版本
 node --version
 
-# 方案 A：使用 nvm 安裝指定版本
+# 方案 A：使用 nvm 安裝指定版本（推薦）
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc  # 或 ~/.zshrc
 nvm install 18
 nvm use 18
+nvm alias default 18
 
-# 方案 B：從官方網站下載
-# 訪問 https://nodejs.org/
+# 方案 B：使用套件管理器安裝
+
+## Ubuntu/Debian
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+## macOS (使用 Homebrew)
+brew install node@18
+brew link node@18
+
+## CentOS/RHEL/Fedora
+curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+sudo yum install -y nodejs
+
+# 方案 C：從官方網站下載
+# 訪問 https://nodejs.org/ 下載對應平台的安裝包
 
 # 驗證安裝
 node --version  # 應該顯示 v18.x.x 或更高
