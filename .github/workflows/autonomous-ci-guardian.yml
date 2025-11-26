@@ -31,52 +31,8 @@ jobs:
       - name: 🧠 ML failure prediction
         id: ml-predict
         run: |
-          cat > predict_failures.py << 'PYCODE'
-          import json
-          import subprocess
-
-          result = subprocess.run(
-              ['git', 'log', '--oneline', '-50'],
-              capture_output=True,
-              text=True,
-              check=False,
-          )
-
-          commits = [line for line in result.stdout.strip().split('\n') if line]
-          failure_patterns = {
-              'docker': 0,
-              'test': 0,
-              'performance': 0,
-              'security': 0,
-              'memory': 0,
-          }
-
-          for commit in commits:
-              lowered = commit.lower()
-              if any(x in lowered for x in ['docker', 'compose', 'image']):
-                  failure_patterns['docker'] += 1
-              if any(x in lowered for x in ['test', 'spec', 'unit']):
-                  failure_patterns['test'] += 1
-              if any(x in lowered for x in ['perf', 'optimize', 'speed']):
-                  failure_patterns['performance'] += 1
-              if any(x in lowered for x in ['security', 'auth', 'encrypt']):
-                  failure_patterns['security'] += 1
-              if any(x in lowered for x in ['memory', 'leak', 'gc']):
-                  failure_patterns['memory'] += 1
-
-          total = sum(failure_patterns.values()) or 1
-          risk_score = max(failure_patterns.values()) / total
-
-          output = {
-              'patterns': failure_patterns,
-              'risk_score': risk_score,
-              'high_risk_areas': [k for k, v in failure_patterns.items() if v > 5],
-          }
-
-          print(json.dumps(output))
-          PYCODE
-
-          python3 predict_failures.py > prediction.json
+          # Use the extracted prediction module with comprehensive test coverage
+          python3 .github/scripts/predict_failures.py > prediction.json
           cat prediction.json
 
           PREDICTIONS=$(cat prediction.json | jq -c '.')
