@@ -344,7 +344,6 @@ class TestIntegration:
     async def test_full_analysis_workflow(self):
         """測試完整分析流程"""
         config = {'max_workers': 2}
-        engine = CodeAnalysisEngine(config)
         
         # 創建測試代碼
         test_code = '''
