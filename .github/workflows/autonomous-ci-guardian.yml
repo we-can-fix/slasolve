@@ -841,8 +841,8 @@ jobs:
               "sla_metrics": {
                   "availability_target": 0.9999,
                   "current_availability": current_availability,
-                  "mttr_minutes": 0,  # 靜態基準值，尚未動態計算
-                  "mtbf_hours": 0     # 靜態基準值，尚未動態計算
+                  "mttr_minutes": None,  # 尚未計算，待動態產生
+                  "mtbf_hours": None     # 尚未計算，待動態產生
               },
               "operational_metrics": {
                   "deployment_frequency": "daily",
