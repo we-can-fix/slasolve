@@ -976,7 +976,7 @@ async def main():
     print("代碼分析引擎 v2.0 已初始化")
     print(f"支持的語言: Python, JavaScript, Go, Rust, Java, C++")
     print(f"分析策略: {', '.join([s.value for s in AnalysisStrategy])}")
-
+    print(f"初始引擎指標: {engine.get_metrics()}")
 
 if __name__ == '__main__':
     asyncio.run(main())
