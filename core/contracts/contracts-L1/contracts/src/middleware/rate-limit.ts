@@ -119,7 +119,18 @@ class RedisStore implements RateLimitStore {
     multi.pexpire(key, windowMs);
     
     const results = await multi.exec();
-    return results[0][1] as number; // incr 的結果
+    // 錯誤檢查與型別驗證
+    if (!results || results.length === 0) {
+      throw new Error('Redis multi command returned no results');
+    }
+    const [error, value] = results[0];
+    if (error) {
+      throw new Error(`Redis incr failed: ${error.message}`);
+    }
+    if (typeof value !== 'number') {
+      throw new Error(`Unexpected Redis incr result type: ${typeof value}`);
+    }
+    return value;
   }
 
   async reset(key: string): Promise<void> {
