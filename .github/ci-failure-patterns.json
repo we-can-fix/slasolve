@@ -1,0 +1,9 @@
+{
+  "failure_keywords": {
+    "docker": ["docker", "compose", "image", "container"],
+    "test": ["test", "spec", "unit", "jest", "pytest"],
+    "performance": ["perf", "optimize", "speed", "slow"],
+    "security": ["security", "auth", "encrypt", "vulnerability"],
+    "memory": ["memory", "leak", "gc", "oom"]
+  }
+}

@@ -46,8 +46,7 @@ jobs:
       - name: 🧠 ML failure prediction
         id: ml-predict
         run: |
-          # Use the extracted prediction module with comprehensive test coverage
-          python3 .github/scripts/predict_failures.py > prediction.json
+
           cat prediction.json
 
           PREDICTIONS=$(cat prediction.json | jq -c '.')
