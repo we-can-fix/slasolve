@@ -2,7 +2,9 @@
 name: 動態互動 CI 助手
 
 # 此 workflow 監控其他 CI workflows，提供智能分析和互動式反饋
-# 🔍 重要：成功評論前會驗證 PR 的「全局狀態」，避免部分成功誤報
+# 💡 設計理念：專注於失敗診斷和互動反饋，不發布成功通知（避免資源浪費）
+# 🔍 失敗時：提供智能診斷、修復建議、互動命令
+# ✅ 成功時：僅清理標籤，不發布評論
 on:
   workflow_run:
     workflows:
@@ -497,10 +499,12 @@ jobs:
             });
 
   # ============================================
-  # 成功時清理標籤
+  # 成功時清理標籤（不發布評論）
   # ============================================
+  # 注意：根據用戶要求，成功時僅清理標籤，不發布評論
+  # 原因：成功通知不具意義且浪費資源，應專注於失敗診斷和互動反饋
   cleanup-on-success:
-    name: 🎉 清理成功後的標籤
+    name: 🧹 清理成功後的標籤
     needs: analyze-ci-status
     runs-on: ubuntu-latest
     if: needs.analyze-ci-status.outputs.has_failures == 'false' && needs.analyze-ci-status.outputs.pr_number
@@ -520,6 +524,8 @@ jobs:
               'env-error'
             ];
             
+            console.log('✅ CI 檢查成功，清理失敗標籤（不發布成功評論）');
+            
             for (const label of labelsToRemove) {
               try {
                 await github.rest.issues.removeLabel({
@@ -528,108 +534,11 @@ jobs:
                   issue_number: prNumber,
                   name: label
                 });
-                console.log(`Removed label: ${label}`);
+                console.log(`✅ 已移除標籤: ${label}`);
               } catch (error) {
                 // 標籤不存在，忽略錯誤
-                console.log(`Label ${label} not found, skipping`);
+                console.log(`ℹ️ 標籤 ${label} 不存在，跳過`);
               }
             }
-      
-      - name: 💬 發布成功評論（驗證全局狀態）
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            const prNumber = ${{ needs.analyze-ci-status.outputs.pr_number }};
             
-            // 🔍 重要：再次檢查 ALL checks 的狀態，避免「部分成功」誤報
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber
-            });
-            
-            const { data: checks } = await github.rest.checks.listForRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: pr.head.sha,
-              per_page: 100
-            });
-            
-            // 檢查是否所有 checks 都已完成
-            const pendingChecks = checks.check_runs.filter(check => 
-              check.status !== 'completed'
-            );
-            
-            // 檢查是否有任何失敗
-            const failedChecks = checks.check_runs.filter(check => 
-              check.conclusion === 'failure' || 
-              check.conclusion === 'timed_out' ||
-              check.conclusion === 'cancelled'
-            );
-            
-            // 🚨 關鍵修復：只有在所有檢查都完成且全部成功時才發布成功評論
-            if (pendingChecks.length > 0) {
-              console.log(`⏳ 仍有 ${pendingChecks.length} 個檢查待完成，暫不發布成功評論`);
-              console.log('待完成:', pendingChecks.map(c => c.name).join(', '));
-              return; // 提早退出，不發布評論
-            }
-            
-            if (failedChecks.length > 0) {
-              console.log(`❌ 發現 ${failedChecks.length} 個失敗的檢查，不發布成功評論`);
-              console.log('失敗:', failedChecks.map(c => c.name).join(', '));
-              return; // 提早退出，不發布評論
-            }
-            
-            // ✅ 確認：所有檢查已完成且全部成功
-            console.log('✅ 確認所有檢查已完成且成功，發布成功評論');
-            
-            const successfulChecks = checks.check_runs.filter(check => 
-              check.conclusion === 'success'
-            );
-            
-            const comment = `## ✅ CI 檢查全部通過！
-            
-            恭喜！所有 **${successfulChecks.length} 個** CI 檢查已成功完成。您的代碼已準備好進行審查。
-            
-            ### 📋 通過的檢查
-            
-            ${successfulChecks.slice(0, 10).map(c => `- ✅ ${c.name}`).join('\n')}
-            ${successfulChecks.length > 10 ? `\n... 以及其他 ${successfulChecks.length - 10} 個檢查` : ''}
-            
-            ### 📋 下一步
-            
-            - 🔍 等待代碼審查
-            - 📝 確保 PR 描述清晰完整
-            - 🎯 回應審查者的反饋
-            
-            ---
-            *此評論由動態 CI 助手自動生成 | ✅ 已驗證全局狀態*`;
-            
-            // 檢查是否已有機器人評論
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber
-            });
-            
-            const botComments = comments.filter(c => 
-              c.user.type === 'Bot' && c.body.includes('動態 CI 助手')
-            );
-            
-            if (botComments.length > 0) {
-              // 更新現有評論
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComments[0].id,
-                body: comment
-              });
-            } else {
-              // 創建新評論
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: comment
-              });
-            }
+            console.log('✅ 標籤清理完成。專注於失敗診斷，不發布成功通知。');
