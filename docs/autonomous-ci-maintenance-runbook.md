@@ -729,6 +729,25 @@ cp -r "$RESTORE_DIR"/*/docs/ .
 cp "$RESTORE_DIR"/*/docker-compose.yml .
 
 # 4. 恢復數據庫
+# 4.1 啟動資料庫容器
+docker-compose up -d db
+
+# 4.2 等待資料庫就緒（最多 60 秒）
+echo "等待資料庫容器啟動與就緒..."
+for i in {1..30}; do
+  docker-compose exec db pg_isready -U postgres
+  if [ $? -eq 0 ]; then
+    echo "資料庫已就緒"
+    break
+  fi
+  sleep 2
+done
+# 若超時仍未就緒則退出
+docker-compose exec db pg_isready -U postgres
+if [ $? -ne 0 ]; then
+  echo "❌ 資料庫啟動逾時，請檢查容器日誌"
+  exit 1
+fi
 BACKUP_SUBDIR=$(ls -1d "$RESTORE_DIR"/*/ | head -1)
 if [ -f "$BACKUP_SUBDIR/database.sql" ]; then
   cat "$BACKUP_SUBDIR/database.sql" | docker-compose exec -T db psql -U postgres
