@@ -408,11 +408,34 @@ jobs:
             "memory_usage": "$MEMORY",
             "network_latency": "${LATENCY}ms",
             "error_rate": "$ERROR_RATE",
-            "status": "healthy"
-          }
-          EOFM
 
-          cat metrics.json
+      - name: 📝 準備 docker-compose 檔案
+        run: |
+          if [ ! -f docker-compose.yml ]; then
+            echo "version: '3.8'
+services:
+  app:
+    image: autonomous-system:latest
+    ports:
+      - '8001:8001'
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+" > docker-compose.yml
+          fi
+
+      - name: 🚀 Full deployment
+        if: ${{ steps.remediation-decision.outputs.action == 'FULL_DEPLOY' }}
+        run: |
+          echo "🚀 開始完整部署..."
+          if [ ! -f docker-compose.yml ]; then
+            echo "❌ docker-compose.yml 檔案不存在，部署失敗"
+            exit 1
+          fi
           BASH
 
           bash collect_metrics.sh
