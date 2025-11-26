@@ -25,7 +25,6 @@ from services.code_analyzer import (
     CodeMetrics,
     CodeIssue,
     AnalysisResult,
-    BaseAnalyzer,
     StaticAnalyzer,
     PythonAnalyzer,
     JavaScriptAnalyzer,
