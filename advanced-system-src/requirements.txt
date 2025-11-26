@@ -34,3 +34,16 @@ pytest-mock>=3.12.0,<4.0.0     # Mocking support
 # Additional utilities
 python-dotenv>=1.0.0,<2.0.0    # Environment variable management
 structlog>=23.2.0,<24.0.0      # Structured logging
+
+# Web framework and API
+fastapi>=0.104.0,<0.105.0      # Modern web framework
+uvicorn[standard]>=0.24.0,<0.25.0  # ASGI server
+pydantic>=2.5.0,<3.0.0         # Data validation (already listed but repeated for clarity)
+
+# Database
+sqlalchemy>=2.0.0,<3.0.0       # ORM framework
+alembic>=1.12.0,<2.0.0         # Database migrations
+
+# Additional API tools
+httpx>=0.25.0,<0.26.0          # HTTP client
+python-multipart>=0.0.6,<0.1.0 # File upload support
