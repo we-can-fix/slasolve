@@ -377,7 +377,11 @@ jobs:
           echo "監控金絲雀部署 5 分鐘..."
           sleep 300
 
-          ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}')
+          ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep -oP 'error_rate\s+\K[\d.]+' || echo "0")
+          if [ -z "$ERROR_RATE" ]; then
+            echo "❌ 無法取得錯誤率，假定為失敗"
+            ERROR_RATE="1.0"
+          fi
           if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
             echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE"
             exit 1
