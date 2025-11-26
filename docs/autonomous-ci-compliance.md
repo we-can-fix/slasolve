@@ -375,7 +375,7 @@ def calculate_alert_severity(metric, threshold):
   "actor": {
     "type": "SERVICE_ACCOUNT",
     "id": "ci-system@example.com",
-    "ip": "10.0.0.1"
+    "ip": "10.0.0.1"  // 注意：IP 可能為個人資料，需依隱私政策處理
   },
   "target": {
     "type": "SERVICE",
@@ -406,6 +406,13 @@ def calculate_alert_severity(metric, threshold):
     - 操作日誌：90 天
     - 安全事件日誌：1 年
     - 合規相關日誌：7 年（或依法規要求）
+
+> **隱私注意事項**：審計日誌中記錄的 IP 位址在 GDPR 等隱私法規下可能被視為個人資料。
+> 建議措施：
+> 1. 在隱私政策中明確說明 IP 記錄用途與保留期限
+> 2. 對於內部服務帳號，優先記錄服務識別符而非 IP
+> 3. 確保日誌存取權限受到嚴格控制
+> 4. 定期審查日誌存取紀錄
 
 #### ISO 27001 合規要求
 - [x] 資訊安全政策

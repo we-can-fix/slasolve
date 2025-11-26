@@ -220,15 +220,18 @@ jobs:
 
           MAX_ATTEMPTS=${MAX_RETRY_ATTEMPTS:-3}
           ATTEMPT=1
+          SCAN_STATUS=1  # 預設為失敗狀態
 
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
             echo "安全掃描嘗試 $ATTEMPT/$MAX_ATTEMPTS..."
             
             if npm audit --json > audit.json 2>&1; then
+              SCAN_STATUS=0
               echo "✅ 安全掃描成功"
               break
             else
-              echo "⚠️  掃描嘗試 $ATTEMPT 失敗"
+              SCAN_STATUS=$?
+              echo "⚠️  掃描嘗試 $ATTEMPT 失敗 (退出碼: $SCAN_STATUS)"
               if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
                 echo "❌ 達到最大重試次數，記錄掃描失敗狀態"
                 echo '{"metadata":{"vulnerabilities":{"total":-1,"critical":-1}},"error":"scan_failed"}' > audit.json
@@ -378,7 +381,8 @@ jobs:
           sleep 5
 
           # 健康檢查（帶重試）
-          get_port() {
+          # 根據服務名稱取得對應埠號
+          get_service_port() {
             case "$1" in
               flight-control) echo "8001" ;;
               gps-nav) echo "8002" ;;
@@ -388,7 +392,7 @@ jobs:
             esac
           }
 
-          PORT=$(get_port "$SERVICE")
+          PORT=$(get_service_port "$SERVICE")
           HEALTH_URL="http://localhost:${PORT}/health"
 
           ATTEMPT=1
