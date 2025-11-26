@@ -186,7 +186,7 @@ find . -type d \( -not -path "./node_modules/*" -not -path "./.git/*" -not -path
     count=$(find "$dir" -maxdepth 1 -type f 2>/dev/null | wc -l)
     echo "$count $dir"
   done | sort -rn | head -10 | \
-  while read count dir; do
+  while read -r count dir; do
     printf "| %-30s | %19s |\n" "\`${dir}\`" "$count"
   done
 
