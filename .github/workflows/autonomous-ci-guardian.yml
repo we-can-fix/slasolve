@@ -828,7 +828,7 @@ jobs:
           except ValueError:
               skipped_jobs = 0  # 安全預設值
           # SLA 可用性計算：成功 job / 總 job
-          current_availability = successful_jobs / total_jobs if total_jobs > 0 else 0.0
+          current_availability = successful_jobs / total_jobs if total_jobs > 0 else None
           # MTTR/MTBF 暫以靜態值，並註明為基準值
           metrics = {
               "timestamp": datetime.utcnow().isoformat() + "Z",
