@@ -165,11 +165,12 @@ echo ""
 echo "| 檔案類型 / File Type | 數量 / Count |"
 echo "|---------------------|--------------|"
 
-find . -type f \( -not -path "./node_modules/*" -not -path "./.git/*" -not -path "*/dist/*" \) -name "*.*" | \
-  sed 's/.*\.//' | \
+find . -type f \( -not -path "./node_modules/*" -not -path "./.git/*" -not -path "*/dist/*" \) | \
+  awk -F/ '{print $NF}' | \
+  awk -F. '{if (NF>1 && $NF!="") print "."$NF; else print "no-ext"}' | \
   sort | uniq -c | sort -rn | head -15 | \
-  while read count ext; do
-    printf "| .%-17s | %12s |\n" "$ext" "$count"
+  while read -r count ext; do
+    printf "| %-17s | %12s |\n" "$ext" "$count"
   done
 
 echo ""
