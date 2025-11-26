@@ -48,20 +48,21 @@
 
 ## 2. 完全自主決策機制
 
-本系統採用 **完全自主決策** 模式，所有風險等級均由 AI 系統自動評估與處置，無需人工介入。
+本系統採用 **完全自主決策** 模式，所有風險等級均由規則式自動評估與處置。評估邏輯基於明確規則與閾值，未使用機器學習或 AI 模型。CRITICAL 風險會觸發自動回滾並通知安全團隊，其他風險等級完全自動處理。
 
 | 風險等級 | 自動化程度 | 決策模式 | 執行時間 | 自動化策略 |
 |---------|----------|---------|---------|-----------|
 | LOW | 100% | 完全自主 | 即時 | 直接部署 |
 | MEDIUM | 100% | 完全自主 | 即時 | 分階段部署（自動監控） |
 | HIGH | 100% | 完全自主 | 即時 | 金絲雀部署（自動驗證） |
-| CRITICAL | 100% | 完全自主 | 即時 | 自動回滾至穩定版本 |
+| CRITICAL | 100% | 自動回滾 | 即時 | 自動回滾至穩定版本（通知安全團隊） |
 
 ### 自主決策實施機制
 
 - **完全自主**：系統根據風險評估結果自動選擇最佳部署策略，無需等待人工核准
 - **智能監控**：部署過程中持續監控關鍵指標（錯誤率、性能、健康狀態）
 - **自動修復**：偵測到異常時立即執行自動回滾或降級，確保系統穩定性
+- **CRITICAL 處理**：偵測到嚴重安全漏洞時，跳過健康檢查直接觸發自動回滾，並通知安全團隊
 - **決策時間**：所有決策均在秒級完成，確保快速響應
 - **審計追蹤**：所有自動決策均記錄於審計日誌，供事後分析與合規檢查
 - **通知機制**：重大決策（HIGH/CRITICAL）執行後立即通知相關團隊，但不阻塞執行流程
@@ -121,17 +122,17 @@ EOFAUDIT
 # 測試腳本：驗證不同風險等級的自動決策
 test_risk_assessment() {
   local test_cases=(
-    "CRITICAL:0:true:ROLLBACK"
-    "HIGH:3:true:CANARY_DEPLOY"
-    "MEDIUM:1:true:STAGED_DEPLOY"
-    "LOW:0:true:FULL_DEPLOY"
+    "CRITICAL:0:1:ROLLBACK"      # failures=0, critical_vulns=1
+    "HIGH:3:0:CANARY_DEPLOY"     # failures=3, critical_vulns=0
+    "MEDIUM:1:0:STAGED_DEPLOY"   # failures=1, critical_vulns=0
+    "LOW:0:0:FULL_DEPLOY"        # failures=0, critical_vulns=0
   )
 
   for case in "${test_cases[@]}"; do
-    IFS=':' read -r level failures proceed expected <<< "$case"
+    IFS=':' read -r level failures critical expected <<< "$case"
     
     # 模擬風險評估邏輯（從 workflow 中提取）
-    CRITICAL_VULNS=0
+    CRITICAL_VULNS=$critical
     if [ "$failures" -gt 2 ]; then
       ACTION="CANARY_DEPLOY"
     elif [ "$failures" -gt 0 ]; then
@@ -170,9 +171,9 @@ verify_rollback() {
   PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "v1.0.0")
   echo "回滾到版本：$PREVIOUS_VERSION"
   
-  # 驗證版本格式
-  if ! [[ "$PREVIOUS_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "❌ 版本格式不正確"
+  # 驗證版本格式（支援帶或不帶 v 前綴）
+  if ! [[ "$PREVIOUS_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "❌ 版本格式不正確: $PREVIOUS_VERSION"
     exit 1
   fi
   
