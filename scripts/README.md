@@ -24,8 +24,6 @@
 # 輸出到檔案
 ./scripts/generate-directory-tree.sh > DIRECTORY_STRUCTURE.md
 
-# 或使用預設輸出檔名
-./scripts/generate-directory-tree.sh DIRECTORY_STRUCTURE.md
 ```
 
 **輸出內容**:
