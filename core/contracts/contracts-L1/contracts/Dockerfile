@@ -29,8 +29,9 @@ COPY --chown=nodejs:nodejs tsconfig.json ./
 # 複製原始碼
 COPY --chown=nodejs:nodejs src ./src
 
-# 配置 npm 以處理潛在的證書問題（生產環境應修復證書配置）
-RUN npm config set strict-ssl false || true
+# 如需支援企業 CA，請將 internal-ca-cert.crt 複製到映像並更新證書（範例，請依實際情況調整）
+# COPY internal-ca-cert.crt /usr/local/share/ca-certificates/
+# RUN update-ca-certificates
 
 # 升級 npm 以修復 "Exit handler never called" 問題  
 RUN npm install -g npm@10 && npm --version || \
