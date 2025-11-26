@@ -245,8 +245,13 @@ jobs:
             exit 1
           fi
 
-          MEMORY=$(docker stats --no-stream "$SERVICE" | tail -1 | awk '{print $7}')
-          echo "內存使用：$MEMORY"
+          CONTAINER_ID=$(docker-compose ps -q "$SERVICE")
+          if [ -n "$CONTAINER_ID" ]; then
+            MEMORY=$(docker stats --no-stream "$CONTAINER_ID" | tail -1 | awk '{print $7}')
+            echo "內存使用：$MEMORY"
+          else
+            echo "⚠️  警告：無法找到 $SERVICE 的容器"
+          fi
 
           docker-compose down
 
