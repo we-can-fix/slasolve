@@ -1,0 +1,17 @@
+# Test coverage files
+.coverage
+coverage.xml
+htmlcov/
+
+# Pytest cache
+.pytest_cache/
+__pycache__/
+
+# Python bytecode
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
