@@ -368,65 +368,24 @@ jobs:
             echo "✅ ${PERCENTAGE}% 部署成功"
           done
 
-      - name: 🚀 Full deployment
-        if: ${{ steps.remediation-decision.outputs.action == 'FULL_DEPLOY' }}
-        run: |
-          echo "🚀 開始完整部署..."
-          docker-compose build --no-cache
-          docker-compose up -d
-
-            echo "監控金絲雀部署 5 分鐘..."
-            sleep 300
-
-            ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}')
-            if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
-              echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE"
-              exit 1
-            fi
-
-            echo "✅ 金絲雀部署成功"
-          else
-            echo "[DRY-RUN] 模擬部署，不實際執行"
-            echo "[DRY-RUN] 跳過監控與指標檢查"
-            echo "✅ [DRY-RUN] 金絲雀部署流程模擬完成"
-          fi
-        id: metrics
-        run: |
-          cat > collect_metrics.sh << 'BASH'
-          #!/bin/bash
-          set -u
-
-          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          CPU=$(docker stats --no-stream 2>/dev/null | tail -1 | awk '{print $3}' || echo "N/A")
-          MEMORY=$(docker stats --no-stream 2>/dev/null | tail -1 | awk '{print $7}' || echo "N/A")
-          LATENCY=$(ping -c 1 8.8.8.8 2>/dev/null | tail -1 | awk '{print $4}' | cut -d'/' -f2 || echo "N/A")
-          ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}' || echo "0.0")
-
-          cat > metrics.json << EOFM
-          {
-            "timestamp": "$TIMESTAMP",
-            "cpu_usage": "$CPU",
-            "memory_usage": "$MEMORY",
-            "network_latency": "${LATENCY}ms",
-            "error_rate": "$ERROR_RATE",
-
       - name: 📝 準備 Docker Compose 檔案
         run: |
           if [ ! -f docker-compose.yml ]; then
-            echo "version: '3.8'
-services:
-  app:
-    image: autonomous-system:latest
-    ports:
-      - '8001:8001'
-    environment:
-      - NODE_ENV=production
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-" > docker-compose.yml
+            cat > docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            app:
+              image: autonomous-system:latest
+              ports:
+                - '8001:8001'
+              environment:
+                - NODE_ENV=production
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+          EOF
           fi
 
       - name: 🚀 Full deployment
@@ -437,9 +396,44 @@ services:
             echo "❌ docker-compose.yml 檔案不存在，部署失敗"
             exit 1
           fi
-          BASH
+          docker-compose build --no-cache
+          docker-compose up -d
 
-          bash collect_metrics.sh
+          echo "監控部署 30 秒..."
+          sleep 30
+
+          ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}' || echo "0.0")
+          if [ -n "$ERROR_RATE" ] && [ "$ERROR_RATE" != "0.0" ]; then
+            # 使用 awk 進行浮點數比較，當 ERROR_RATE > 0.01 時返回 0（成功），觸發 if 條件
+            if awk "BEGIN {exit ($ERROR_RATE > 0.01 ? 0 : 1)}"; then
+              echo "❌ 部署失敗，錯誤率 $ERROR_RATE"
+              exit 1
+            fi
+          fi
+
+          echo "✅ 完整部署成功"
+
+      - name: 📊 Collect metrics
+        id: metrics
+        if: always()
+        run: |
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          CPU=$(docker stats --no-stream 2>/dev/null | tail -1 | awk '{print $3}' || echo "N/A")
+          MEMORY=$(docker stats --no-stream 2>/dev/null | tail -1 | awk '{print $7}' || echo "N/A")
+          LATENCY=$(ping -c 1 8.8.8.8 2>/dev/null | tail -1 | awk '{print $4}' | cut -d'/' -f2 || echo "N/A")
+          ERROR_RATE=$(curl -s http://localhost:8080/metrics 2>/dev/null | grep error_rate | awk '{print $NF}' || echo "0.0")
+
+          cat > metrics.json << EOF
+          {
+            "timestamp": "$TIMESTAMP",
+            "cpu_usage": "$CPU",
+            "memory_usage": "$MEMORY",
+            "network_latency": "${LATENCY}ms",
+            "error_rate": "$ERROR_RATE"
+          }
+          EOF
+
+          cat metrics.json
 
       - name: 🚨 Critical alert on failure
         if: failure()
