@@ -40,9 +40,9 @@ No workflows were given excessive permissions such as:
 #### 3. Dependency Security
 
 **GitHub Actions Used**:
-- `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683` # v4.2.2 (SHA pinned)
-- `actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af` # v4.1.0 (SHA pinned)
-- `actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea` # v7.0.1 (SHA pinned)
+- `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683` # v4.2.2 (SHA pinned, 已驗證對應)
+- `actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af` # v4.1.0 (SHA pinned, 已驗證對應)
+- `actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea` # v7.0.1 (SHA pinned, 已驗證對應)
 
 All actions are:
 - ✅ SHA-pinned for security
