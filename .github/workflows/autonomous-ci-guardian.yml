@@ -18,10 +18,17 @@ env:
   MAX_RETRY_ATTEMPTS: "3"
   HEALTH_CHECK_TIMEOUT: "300"
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   self-diagnostics:
     runs-on: ubuntu-latest
     if: ${{ env.ENABLE_SELF_DIAGNOSTICS == 'true' }}
+    permissions:
+      contents: read
     outputs:
       system_health: ${{ steps.health-check.outputs.status }}
       diagnostics_passed: ${{ steps.health-check.outputs.passed }}
@@ -93,6 +100,8 @@ jobs:
     needs: [self-diagnostics]
     runs-on: ubuntu-latest
     if: ${{ needs.self-diagnostics.outputs.diagnostics_passed == 'true' || env.ENABLE_SELF_DIAGNOSTICS != 'true' }}
+    permissions:
+      contents: read
     outputs:
       risk_level: ${{ steps.risk-assessment.outputs.level }}
       should_proceed: ${{ steps.risk-assessment.outputs.proceed }}
@@ -315,6 +324,8 @@ jobs:
     needs: predictive-failure-detection
     runs-on: ubuntu-latest
     if: ${{ needs.predictive-failure-detection.outputs.should_proceed == 'True' }}
+    permissions:
+      contents: read
 
     strategy:
       matrix:
@@ -477,6 +488,8 @@ jobs:
     needs: [predictive-failure-detection, critical-service-health-check]
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
 
     steps:
       - name: 📥 Checkout repository
@@ -616,6 +629,10 @@ jobs:
     needs: auto-remediation
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
 
     steps:
       - name: 📥 Checkout repository
@@ -700,6 +717,9 @@ jobs:
     needs: [self-diagnostics, predictive-failure-detection, critical-service-health-check, auto-remediation, realtime-monitoring]
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
+      actions: write
 
     steps:
       - name: 📥 Checkout repository
