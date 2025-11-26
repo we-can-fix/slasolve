@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '*/5 * * * *'
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 env:
   SAFETY_THRESHOLD: "0.99"
   PERFORMANCE_THRESHOLD: "1000ms"
