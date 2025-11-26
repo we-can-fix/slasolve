@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  issues: write
 
 jobs:
   basic-checks:
@@ -189,3 +190,24 @@ jobs:
         run: |
           echo "測試失敗，CI 檢查未通過"
           exit 1
+  
+  # ==================== 互動式客服整合 ====================
+  # Note: 全時反饋型 - 在所有事件（PR/push）都提供互動式反饋
+  interactive-service:
+    name: 🤖 Stage 1 Basic CI 互動式客服
+    needs: [basic-checks]
+    if: always()
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "Stage 1 Basic CI"
+      ci-status: ${{ needs.basic-checks.result }}
+      ci-context: |
+        {
+          "tests_result": "${{ needs.basic-checks.result }}",
+          "service": "contracts-l1"
+        }
+      error-logs: ${{ needs.basic-checks.result == 'failure' && '基礎測試失敗。請檢查：\n1. 測試日誌中的具體錯誤\n2. 環境健康檢查是否通過\n3. 相關測試覆蓋率是否達標\n4. 詳細報告：core/contracts/contracts-L1/contracts/' || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
