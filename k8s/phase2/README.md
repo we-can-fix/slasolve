@@ -64,6 +64,12 @@ Phase 2 是 SLASolve 的完整生產級 Kubernetes 部署配置，包含：
 - 2 副本
 - 資源：2Gi-4Gi 內存，1-2 CPU
 
+#### Contracts L1
+- 2 副本，自動擴展 (2-6)
+- 資源：512Mi-1Gi 內存，250m-500m CPU
+- HPA、PDB、網絡策略
+- SLSA 認證與構建溯源服務
+
 ### 6. 監控系統 (`06-monitoring/`)
 
 #### Prometheus

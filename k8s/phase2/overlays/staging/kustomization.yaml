@@ -17,6 +17,9 @@ resources:
 - ../../05-core-services/vulnerability-detector/deployment.yaml
 - ../../05-core-services/vulnerability-detector/service.yaml
 - ../../05-core-services/vulnerability-detector/hpa.yaml
+- ../../05-core-services/contracts-l1/deployment.yaml
+- ../../05-core-services/contracts-l1/service.yaml
+- ../../05-core-services/contracts-l1/hpa.yaml
 
 replicas:
 - name: code-analyzer

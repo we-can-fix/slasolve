@@ -45,6 +45,20 @@ spec:
             name: orchestrator
             port:
               number: 8083
+      - path: /api/v1/provenance
+        pathType: Prefix
+        backend:
+          service:
+            name: contracts-l1
+            port:
+              number: 3000
+      - path: /api/v1/slsa
+        pathType: Prefix
+        backend:
+          service:
+            name: contracts-l1
+            port:
+              number: 3000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

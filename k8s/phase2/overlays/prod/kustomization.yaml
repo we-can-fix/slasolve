@@ -37,6 +37,11 @@ resources:
 - ../../05-core-services/orchestrator/deployment.yaml
 - ../../05-core-services/orchestrator/service.yaml
 - ../../05-core-services/orchestrator/network-policy.yaml
+- ../../05-core-services/contracts-l1/deployment.yaml
+- ../../05-core-services/contracts-l1/service.yaml
+- ../../05-core-services/contracts-l1/hpa.yaml
+- ../../05-core-services/contracts-l1/pdb.yaml
+- ../../05-core-services/contracts-l1/network-policy.yaml
 - ../../06-monitoring/prometheus/deployment.yaml
 - ../../06-monitoring/prometheus/service.yaml
 - ../../06-monitoring/prometheus/configmap.yaml
