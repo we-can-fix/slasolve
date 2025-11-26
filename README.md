@@ -172,3 +172,116 @@ For complete documentation, see:
 - [API Documentation](autonomous-system/docs-examples/API_DOCUMENTATION.md)
 - [Governance Matrix](autonomous-system/docs-examples/governance_matrix.yaml)
 
+## 🤖 動態互動 CI 系統
+
+我們實現了**全新的動態互動 CI 系統**，讓每個 CI workflow 都成為一個靈活的互動式客服代理。
+
+### 🎯 系統特色
+
+#### 1. 每個 CI 都是獨立的互動式客服
+- 🤖 **智能代理**：每個 CI（Core Services CI、Integration & Deployment 等）都有自己的互動式客服
+- 💬 **獨立評論**：每個 CI 在 PR 中有獨立的評論和狀態報告
+- 🎯 **針對性診斷**：根據 CI 類型提供專門的錯誤分析和修復建議
+- 🏷️ **精準標籤**：每個 CI 管理自己的失敗標籤
+
+#### 2. 統一的監控和互動
+- 🔍 **全局監控**：動態 CI 助手監控所有 CI 的整體狀態
+- 🗣️ **開發者互動**：支援 `@copilot` 命令獲取幫助
+- 📊 **統一報告**：跨 CI 的整體健康度報告
+- ♻️ **零資源浪費**：不重複運行測試，只提供智能分析
+
+### 使用方式
+
+#### 當 CI 失敗時
+
+1. **查看各 CI 的獨立客服評論**
+   - 每個 CI（如 Core Services CI）都有自己的診斷報告
+   - 報告包含該 CI 特定的錯誤分析和修復建議
+   - 查看全局監控助手的整體分析
+
+2. **執行 CI 特定的快速修復命令**
+   每個 CI 的評論會提供針對性的修復命令，例如：
+   ```bash
+   # Core Services CI 相關
+   npm test
+   npm run lint:fix
+   
+   # Docker 相關 CI
+   docker-compose build --no-cache
+   docker system prune -a
+   
+   # 環境檢查
+   bash scripts/check-env.sh
+   ```
+
+3. **與 CI 客服互動獲取幫助**
+   在 PR 評論中針對特定 CI 輸入命令：
+   - `@copilot analyze Core Services CI` - 深度分析該 CI
+   - `@copilot fix Core Services CI` - 獲取自動修復建議
+   - `@copilot help Integration & Deployment` - 查看該 CI 文檔
+   - `@copilot similar Code Quality Check` - 查找相似問題
+
+### 系統架構
+
+```
+每個 CI Workflow              全局監控
+─────────────────              ─────────
+Core Services CI    ────┐
+  └─ 互動式客服           │
+                         │
+Integration CI      ────┤     動態 CI 助手
+  └─ 互動式客服           ├───→ • 整體狀態監控
+                         │     • 跨 CI 分析
+Deploy CI           ────┤     • 全局互動
+  └─ 互動式客服           │
+                         │
+Code Quality CI     ────┘
+  └─ 互動式客服
+```
+
+### 系統優勢
+
+| 特性 | 傳統 CI | 新系統 |
+|------|--------|--------|
+| **CI 獨立性** | 每個 CI 獨立運行 | 每個 CI 都有自己的互動式客服 |
+| **反饋速度** | 失敗後需查日誌 | 30-60 秒內獲得智能診斷 |
+| **診斷質量** | 基礎日誌 | AI 針對性分析 + 修復建議 |
+| **互動性** | 無 | 每個 CI 支援獨立對話 |
+| **資源消耗** | 正常 CI 執行 | 額外客服僅 30-60 秒 |
+| **標籤管理** | 手動 | 每個 CI 自動管理標籤 |
+
+### 相關文檔
+
+- 🆕 **[CI 互動式客服升級指南](./docs/INTERACTIVE_CI_UPGRADE_GUIDE.md)** - 如何升級任何 CI
+- 📖 [動態 CI 助手完整文檔](./docs/DYNAMIC_CI_ASSISTANT.md) - 全局監控系統
+- 🔧 [CI 故障排除 Runbook](./docs/ci-troubleshooting.md) - 常見問題解決
+- 🛠️ [CI 系統架構](./docs/CI_AUTO_COMMENT_SYSTEM.md) - 系統設計文檔
+- 📜 [環境檢查腳本](./scripts/check-env.sh) - 本地環境診斷
+
+### 快速參考
+
+**常見 CI 問題快速修復**
+
+| 問題類型 | 診斷方法 | 快速修復 |
+|---------|---------|---------|
+| 環境問題 | 動態 CI 助手自動診斷 | `bash scripts/check-env.sh` |
+| Docker 構建失敗 | 查看 PR 評論中的分析 | `docker-compose build --no-cache` |
+| 測試失敗 | 查看失敗的具體測試 | `npm test -- --verbose` |
+| 磁盤空間不足 | 檢查磁盤使用率 | `docker system prune -a` |
+| 部署失敗 | 檢查環境變數和權限 | 查看部署日誌 |
+
+**互動命令**
+
+```bash
+# 針對特定 CI 的命令：
+@copilot analyze Core Services CI     # 深度分析該 CI
+@copilot fix Core Services CI         # 獲取自動修復建議
+@copilot help Integration CI          # 查看該 CI 文檔
+@copilot similar Deploy CI            # 查找相似問題
+
+# 全局命令：
+@copilot 幫我分析                     # 分析所有 CI 狀態
+@copilot 環境檢查                     # 環境診斷指南
+@copilot 文檔                         # 查看系統文檔
+```
+

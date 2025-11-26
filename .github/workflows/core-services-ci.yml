@@ -209,3 +209,23 @@ jobs:
         run: |
           echo "❌ 某些 CI 檢查失敗"
           exit 1
+  
+  # ==================== 互動式客服整合 ====================
+  interactive-service:
+    name: 🤖 Core Services 互動式客服
+    needs: [contracts-l1-ci, mcp-servers-ci, ci-status-report]
+    if: always()
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "Core Services CI"
+      ci-status: ${{ (needs.contracts-l1-ci.result == 'success' && needs.mcp-servers-ci.result == 'success') && 'success' || 'failure' }}
+      ci-context: |
+        {
+          "contracts_l1": "${{ needs.contracts-l1-ci.result }}",
+          "mcp_servers": "${{ needs.mcp-servers-ci.result }}"
+        }
+      error-logs: ${{ needs.ci-status-report.result == 'failure' && '檢測到 CI 失敗，請查看詳細日誌' || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
