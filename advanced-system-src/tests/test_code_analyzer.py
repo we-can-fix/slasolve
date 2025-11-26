@@ -11,7 +11,6 @@ Version: 2.0.0
 """
 
 import pytest
-import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
