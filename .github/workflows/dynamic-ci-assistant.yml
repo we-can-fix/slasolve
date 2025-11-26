@@ -39,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_run' || github.event_name == 'pull_request'
     outputs:
-      has_failures: ${{ steps.check-status.outputs.has_failures }}
-      failed_workflows: ${{ steps.check-status.outputs.failed_workflows }}
+      has_failures: ${{ steps.check-status.outputs.has_failures || steps.set-defaults.outputs.has_failures }}
+      failed_workflows: ${{ steps.check-status.outputs.failed_workflows || steps.set-defaults.outputs.failed_workflows }}
       pr_number: ${{ steps.get-pr.outputs.pr_number }}
     
     steps:
@@ -73,6 +73,14 @@ jobs:
             console.log(`PR Number: ${prNumber}`);
             core.setOutput('pr_number', prNumber);
             return prNumber;
+      
+      - name: 🔧 設定預設輸出值
+        id: set-defaults
+        if: steps.get-pr.outputs.pr_number == ''
+        run: |
+          echo "has_failures=false" >> $GITHUB_OUTPUT
+          echo "failed_workflows=[]" >> $GITHUB_OUTPUT
+          echo "No PR number found, setting default outputs"
       
       - name: 🔍 檢查 CI 狀態
         id: check-status
@@ -138,7 +146,7 @@ jobs:
     name: 🔬 診斷失敗原因
     needs: analyze-ci-status
     runs-on: ubuntu-latest
-    if: needs.analyze-ci-status.outputs.has_failures == 'true'
+    if: needs.analyze-ci-status.outputs.has_failures == 'true' && needs.analyze-ci-status.outputs.pr_number != ''
     outputs:
       diagnosis_report: ${{ steps.diagnose.outputs.report }}
     
@@ -287,7 +295,7 @@ jobs:
     name: 💬 生成互動式評論
     needs: [analyze-ci-status, diagnose-failures]
     runs-on: ubuntu-latest
-    if: needs.analyze-ci-status.outputs.has_failures == 'true' && needs.analyze-ci-status.outputs.pr_number
+    if: needs.analyze-ci-status.outputs.has_failures == 'true' && needs.analyze-ci-status.outputs.pr_number != ''
     
     steps:
       - name: 📥 檢出代碼
@@ -507,7 +515,7 @@ jobs:
     name: 🧹 清理成功後的標籤
     needs: analyze-ci-status
     runs-on: ubuntu-latest
-    if: needs.analyze-ci-status.outputs.has_failures == 'false' && needs.analyze-ci-status.outputs.pr_number
+    if: needs.analyze-ci-status.outputs.has_failures == 'false' && needs.analyze-ci-status.outputs.pr_number != ''
     
     steps:
       - name: 🧹 移除失敗標籤
