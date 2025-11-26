@@ -46,25 +46,167 @@
 }
 ```
 
-## 2. 關鍵決策點的人工審查
+## 2. 完全自主決策機制
 
-| 風險等級 | 自動化程度 | 人工審查 | 決策時間 |
-|---------|----------|--------|--------|
-| LOW | 100% | 可選 | 即時 |
-| MEDIUM | 70% | 必須 | 15 分鐘 |
-| HIGH | 30% | 必須 | 1 小時 |
-| CRITICAL | 0% | 必須 | 立即 |
+本系統採用 **完全自主決策** 模式，所有風險等級均由 AI 系統自動評估與處置，無需人工介入。
 
+| 風險等級 | 自動化程度 | 決策模式 | 執行時間 | 自動化策略 |
+|---------|----------|---------|---------|-----------|
+| LOW | 100% | 完全自主 | 即時 | 直接部署 |
+| MEDIUM | 100% | 完全自主 | 即時 | 分階段部署（自動監控） |
+| HIGH | 100% | 完全自主 | 即時 | 金絲雀部署（自動驗證） |
+| CRITICAL | 100% | 完全自主 | 即時 | 自動回滾至穩定版本 |
 
-### 人工審查實施機制
+### 自主決策實施機制
 
-- **必須**：workflow 將阻塞並等待核准（例如使用 GitHub Environment protection rules），未經人工核准不得繼續。
-- **可選**：流程自動繼續，但會通知相關人員可進行人工介入，視情況可跳過審查。
-- **決策時間**：指從風險偵測到必須做出繼續/停止決策的最大允許時間。
-- **超時處理**：若 HIGH/CRITICAL 風險超過決策時間未獲核准，系統將自動回滾至安全狀態，並記錄審計日誌。
+- **完全自主**：系統根據風險評估結果自動選擇最佳部署策略，無需等待人工核准
+- **智能監控**：部署過程中持續監控關鍵指標（錯誤率、性能、健康狀態）
+- **自動修復**：偵測到異常時立即執行自動回滾或降級，確保系統穩定性
+- **決策時間**：所有決策均在秒級完成，確保快速響應
+- **審計追蹤**：所有自動決策均記錄於審計日誌，供事後分析與合規檢查
+- **通知機制**：重大決策（HIGH/CRITICAL）執行後立即通知相關團隊，但不阻塞執行流程
 ## 3. 故障恢復時間目標（RTO）
 
 - **CRITICAL**：< 5 分鐘（自動回滾）
 - **HIGH**：< 15 分鐘（金絲雀回滾）
 - **MEDIUM**：< 1 小時（分階段回滾）
 - **LOW**：< 4 小時（標準回滾）
+
+## 4. 實作與驗證範例
+
+### 4.1 審計日誌產生範例
+
+在 CI/CD pipeline 中自動產生審計日誌：
+
+```bash
+#!/bin/bash
+# 在 autonomous-ci-guardian.yml 的每個關鍵決策點執行
+
+CHANGE_ID="CHG-$(date +%Y%m%d)-$(uuidgen | cut -d'-' -f1)"
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+cat > audit-log-${CHANGE_ID}.json << EOFAUDIT
+{
+  "change_id": "$CHANGE_ID",
+  "timestamp": "$TIMESTAMP",
+  "actor": "ci-system@${GITHUB_REPOSITORY}",
+  "action": "${ACTION}",
+  "environment": "${ENVIRONMENT}",
+  "version": "${VERSION}",
+  "risk_assessment": {
+    "score": ${RISK_SCORE},
+    "level": "${RISK_LEVEL}",
+    "factors": ${RISK_FACTORS_JSON}
+  },
+  "deployment_strategy": "${DEPLOYMENT_STRATEGY}",
+  "result": "${RESULT}",
+  "rollback_available": ${ROLLBACK_AVAILABLE},
+  "previous_version": "${PREVIOUS_VERSION}",
+  "automated_decision": true,
+  "human_intervention": false
+}
+EOFAUDIT
+
+# 將審計日誌上傳至集中式日誌系統
+# curl -X POST https://audit-logs.example.com/api/logs \
+#   -H "Content-Type: application/json" \
+#   -d @audit-log-${CHANGE_ID}.json
+```
+
+### 4.2 風險評估自動化驗證
+
+驗證風險評估邏輯是否正確運作：
+
+```bash
+# 測試腳本：驗證不同風險等級的自動決策
+test_risk_assessment() {
+  local test_cases=(
+    "CRITICAL:0:true:ROLLBACK"
+    "HIGH:3:true:CANARY_DEPLOY"
+    "MEDIUM:1:true:STAGED_DEPLOY"
+    "LOW:0:true:FULL_DEPLOY"
+  )
+
+  for case in "${test_cases[@]}"; do
+    IFS=':' read -r level failures proceed expected <<< "$case"
+    
+    # 模擬風險評估
+    result=$(CRITICAL_VULNS=0 PREDICTED_FAILURES="{\"high_risk_areas\": $(printf '[1]%.0s' $(seq 1 $failures))}" \
+      bash -c 'source .github/workflows/autonomous-ci-guardian.yml && risk_assessment')
+    
+    if [[ "$result" == *"$expected"* ]]; then
+      echo "✅ 風險等級 $level 測試通過"
+    else
+      echo "❌ 風險等級 $level 測試失敗：預期 $expected，實際 $result"
+      exit 1
+    fi
+  done
+}
+```
+
+### 4.3 自動回滾機制驗證
+
+確保自動回滾在預期時間內完成：
+
+```bash
+# 驗證回滾流程
+verify_rollback() {
+  local start_time=$(date +%s)
+  
+  # 觸發回滾
+  echo "觸發 CRITICAL 風險回滾..."
+  RISK_LEVEL=CRITICAL bash -c 'source auto-remediation step'
+  
+  local end_time=$(date +%s)
+  local duration=$((end_time - start_time))
+  
+  # 驗證 RTO < 5 分鐘（300 秒）
+  if [ $duration -lt 300 ]; then
+    echo "✅ 回滾在 ${duration}s 內完成（RTO: <300s）"
+  else
+    echo "❌ 回滾超時：${duration}s（RTO: <300s）"
+    exit 1
+  fi
+  
+  # 驗證服務健康
+  if curl -f http://localhost:8001/health; then
+    echo "✅ 服務健康檢查通過"
+  else
+    echo "❌ 服務健康檢查失敗"
+    exit 1
+  fi
+}
+```
+
+### 4.4 整合至 CI/CD 流程
+
+在 `autonomous-ci-guardian.yml` 中整合上述驗證：
+
+```yaml
+jobs:
+  compliance-verification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 驗證審計日誌產生
+        run: |
+          source scripts/generate-audit-log.sh
+          test -f audit-log-*.json || exit 1
+          
+      - name: 驗證風險評估邏輯
+        run: bash scripts/test-risk-assessment.sh
+        
+      - name: 驗證回滾機制
+        run: bash scripts/verify-rollback.sh
+```
+
+### 4.5 合規稽核檢查清單
+
+定期執行以下檢查以確保系統符合完全自主決策標準：
+
+- [ ] 所有風險等級（LOW/MEDIUM/HIGH/CRITICAL）均能自動處理
+- [ ] 無人工核准阻塞點（除非為選擇性事後通知）
+- [ ] 審計日誌完整記錄所有自動決策
+- [ ] RTO 符合各風險等級要求
+- [ ] 自動回滾機制經過驗證且可靠
+- [ ] 監控與告警系統正常運作
+- [ ] 決策邏輯可追溯且符合機器可讀格式
