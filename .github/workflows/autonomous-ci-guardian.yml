@@ -375,20 +375,21 @@ jobs:
           docker-compose build --no-cache
           docker-compose up -d
 
-          sleep 5
-          curl -f http://localhost:8001/health
-          echo "✅ 完整部署成功"
+            echo "監控金絲雀部署 5 分鐘..."
+            sleep 300
 
-  realtime-monitoring:
-    needs: auto-remediation
-    runs-on: ubuntu-latest
-    if: always()
+            ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}')
+            if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+              echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE"
+              exit 1
+            fi
 
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 📊 Collect real-time metrics
+            echo "✅ 金絲雀部署成功"
+          else
+            echo "[DRY-RUN] 模擬部署，不實際執行"
+            echo "[DRY-RUN] 跳過監控與指標檢查"
+            echo "✅ [DRY-RUN] 金絲雀部署流程模擬完成"
+          fi
         id: metrics
         run: |
           cat > collect_metrics.sh << 'BASH'
@@ -408,11 +409,34 @@ jobs:
             "memory_usage": "$MEMORY",
             "network_latency": "${LATENCY}ms",
             "error_rate": "$ERROR_RATE",
-            "status": "healthy"
-          }
-          EOFM
 
-          cat metrics.json
+      - name: 📝 準備 Docker Compose 檔案
+        run: |
+          if [ ! -f docker-compose.yml ]; then
+            echo "version: '3.8'
+services:
+  app:
+    image: autonomous-system:latest
+    ports:
+      - '8001:8001'
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+" > docker-compose.yml
+          fi
+
+      - name: 🚀 Full deployment
+        if: ${{ steps.remediation-decision.outputs.action == 'FULL_DEPLOY' }}
+        run: |
+          echo "🚀 開始完整部署..."
+          if [ ! -f docker-compose.yml ]; then
+            echo "❌ docker-compose.yml 檔案不存在，部署失敗"
+            exit 1
+          fi
           BASH
 
           bash collect_metrics.sh

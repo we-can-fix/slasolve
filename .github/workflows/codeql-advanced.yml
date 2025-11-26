@@ -54,3 +54,24 @@ jobs:
       with:
         category: "/language:${{matrix.language}}"
         upload: true
+  
+  # ==================== 互動式客服整合 ====================
+  # Note: 僅在 PR 時提供互動式反饋，避免定期掃描產生評論垃圾
+  interactive-service:
+    name: 🤖 CodeQL Advanced 互動式客服
+    needs: [analyze]
+    if: always() && github.event_name == 'pull_request'
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "CodeQL Advanced Security Scan"
+      ci-status: ${{ needs.analyze.result }}
+      ci-context: |
+        {
+          "analysis_result": "${{ needs.analyze.result }}",
+          "languages": "javascript, python"
+        }
+      error-logs: ${{ needs.analyze.result == 'failure' && format('CodeQL 安全掃描發現問題。\n1. 查看 Security 頁籤：https://github.com/{0}/security/code-scanning\n2. 檢查 javascript 和 python 的掃描結果\n3. 修復高嚴重性問題後重新執行', github.repository) || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
