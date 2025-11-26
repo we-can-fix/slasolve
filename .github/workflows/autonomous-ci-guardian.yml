@@ -504,9 +504,7 @@ jobs:
             "cpu_usage": "$CPU",
             "memory_usage": "$MEMORY",
             "network_latency": "${LATENCY}ms",
-            "error_rate": "$ERROR_RATE"
-          }
-          EOFM
+
           BASH
 
           bash collect_metrics.sh
