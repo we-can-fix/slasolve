@@ -15,7 +15,7 @@ import { join, extname } from 'path';
 const CONFIG = {
   requiredLanguage: 'zh', // 'zh' 或 'en'
   checkFiles: ['.md', '.yml', '.yaml'],
-  excludeDirs: ['node_modules', '.git', 'dist', 'build', '.next'],
+  excludeDirs: ['node_modules', '.git', 'dist', 'build', '.next', '_codeql_detected_source_root'],
   strictMode: false, // true: 阻擋, false: 警告
 };
 
@@ -68,13 +68,26 @@ function scanDirectory(dir, results = []) {
 
   for (const entry of entries) {
     const fullPath = join(dir, entry);
-    const stat = statSync(fullPath);
+    
+    // Skip if excluded directory
+    if (CONFIG.excludeDirs.includes(entry)) {
+      continue;
+    }
+    
+    // Use lstat to handle symlinks properly
+    let stat;
+    try {
+      stat = statSync(fullPath, { throwIfNoEntry: false });
+      if (!stat) continue; // Skip if entry doesn't exist
+    } catch (err) {
+      // Skip on error (e.g., permission denied, broken symlink)
+      console.warn(`⚠️  Skipping ${fullPath}: ${err.message}`);
+      continue;
+    }
 
     if (stat.isDirectory()) {
-      if (!CONFIG.excludeDirs.includes(entry)) {
-        scanDirectory(fullPath, results);
-      }
-    } else {
+      scanDirectory(fullPath, results);
+    } else if (stat.isFile()) {
       const result = checkFile(fullPath);
       if (result) results.push(result);
     }
