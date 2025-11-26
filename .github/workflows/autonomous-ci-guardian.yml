@@ -217,7 +217,7 @@ jobs:
       - name: 📊 Record service metrics
         if: always()
         run: |
-          cat > metrics.json << 'JSON'
+          cat > metrics.json << JSON
           {
             "service": "${{ matrix.service }}",
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
