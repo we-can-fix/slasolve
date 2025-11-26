@@ -12,6 +12,7 @@ permissions:
   security-events: write
   actions: read
   pull-requests: write
+  issues: write
 
 jobs:
   validate-configuration:
@@ -303,3 +304,23 @@ jobs:
           name: phase1-integration-report
           path: phase1-integration-report.md
           retention-days: 30
+  
+  # ==================== 互動式客服整合 ====================
+  interactive-service:
+    name: 🤖 Phase1 Integration 互動式客服
+    needs: [validate-configuration, infrastructure-readiness-check]
+    if: always() && github.event_name == 'pull_request'
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "Phase 1 Integration"
+      ci-status: ${{ (needs.validate-configuration.result == 'success' && needs.infrastructure-readiness-check.result == 'success') && 'success' || 'failure' }}
+      ci-context: |
+        {
+          "validation_result": "${{ needs.validate-configuration.result }}",
+          "readiness_result": "${{ needs.infrastructure-readiness-check.result }}"
+        }
+      error-logs: ${{ (needs.validate-configuration.result == 'failure' || needs.infrastructure-readiness-check.result == 'failure') && 'Phase 1 整合檢查失敗，請查看詳細日誌' || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write

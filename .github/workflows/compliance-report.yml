@@ -249,3 +249,23 @@ jobs:
         echo "- **CodeQL Alerts**: ${{ steps.metrics.outputs.codeql_open }} (${{ steps.metrics.outputs.codeql_critical }} critical)" >> $GITHUB_STEP_SUMMARY
         echo "- **Secret Scanning**: ${{ steps.metrics.outputs.secret_open }} open" >> $GITHUB_STEP_SUMMARY
         echo "- **Vulnerabilities**: ${{ steps.metrics.outputs.vuln_open }} (${{ steps.metrics.outputs.vuln_critical }} critical)" >> $GITHUB_STEP_SUMMARY
+  
+  # ==================== 互動式客服整合 ====================
+  interactive-service:
+    name: 🤖 Compliance Report 互動式客服
+    needs: [generate-compliance-report]
+    if: always() && github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/interactive-ci-service.yml
+    with:
+      ci-name: "Security Compliance Report"
+      ci-status: ${{ needs.generate-compliance-report.result }}
+      ci-context: |
+        {
+          "report_result": "${{ needs.generate-compliance-report.result }}",
+          "report_type": "${{ github.event.inputs.report_type || 'full' }}"
+        }
+      error-logs: ${{ needs.generate-compliance-report.result == 'failure' && '合規報告生成失敗，請查看詳細日誌' || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
