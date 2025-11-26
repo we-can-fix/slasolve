@@ -234,7 +234,7 @@ jobs:
                 echo '{"metadata":{"vulnerabilities":{"total":-1,"critical":-1}},"error":"scan_failed"}' > audit.json
               fi
               ATTEMPT=$((ATTEMPT + 1))
-              BACKOFF=$((2 ** (ATTEMPT - 2)))
+              BACKOFF=$((1 << (ATTEMPT - 1)))
               echo "⏳ 等待 $BACKOFF 秒後重試..."
               sleep $BACKOFF
             fi
