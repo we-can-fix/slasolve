@@ -221,29 +221,25 @@ jobs:
           SERVICE=$1
           echo "檢查 $SERVICE 健康狀態..."
 
+          # 集中定義服務端口映射
+          declare -A SERVICE_PORTS=(
+            ["flight-control"]=8001
+            ["gps-nav"]=8002
+            ["obstacle-detect"]=8003
+            ["telemetry"]=8004
+          )
+
           docker-compose up -d "$SERVICE" 2>&1 | tee startup.log
           STARTUP_EXIT=${PIPESTATUS[0]}
 
           sleep 3
 
-          case "$SERVICE" in
-            flight-control)
-              curl -f http://localhost:8001/health || exit 1
-              ;;
-            gps-nav)
-              curl -f http://localhost:8002/health || exit 1
-              ;;
-            obstacle-detect)
-              curl -f http://localhost:8003/health || exit 1
-              ;;
-            telemetry)
-              curl -f http://localhost:8004/health || exit 1
-              ;;
-          esac
+          PORT=${SERVICE_PORTS[$SERVICE]}
+          curl -f http://localhost:${PORT}/health || exit 1
 
           HEALTH_EXIT=$?
 
-          RESPONSE_TIME=$(curl -w '%{time_total}' -o /dev/null -s http://localhost:8001/health)
+          RESPONSE_TIME=$(curl -w '%{time_total}' -o /dev/null -s http://localhost:${PORT}/health)
           if (( $(echo "$RESPONSE_TIME > 1.0" | bc -l) )); then
             echo "⚠️  性能警告：$SERVICE 響應時間 ${RESPONSE_TIME}s（閾值：1.0s）"
             exit 1
