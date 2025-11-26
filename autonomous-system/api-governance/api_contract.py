@@ -7,7 +7,7 @@ API 規格與治理邊界定義
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List
 import json
 
 class ModuleRole(Enum):
