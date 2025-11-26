@@ -212,16 +212,16 @@ graph TD
     "primary_oncall": {
       "slack": "#critical-alerts",
       "pagerduty": "autonomous-system-oncall",
-      "phone": "請配置實際電話號碼"
+      "phone": null
     },
     "backup_oncall": {
       "slack": "#backup-oncall",
       "email": "backup-team@example.com",
-      "phone": "請配置實際電話號碼"
+      "phone": null
     },
     "management_escalation": {
       "email": "engineering-leadership@example.com",
-      "phone": "請配置實際電話號碼"
+      "phone": null
     }
   }
 }
@@ -234,12 +234,14 @@ graph TD
 ### 5.1 關鍵性能指標（KPI）
 
 #### 系統可用性
-- **目標**: 99.99% (4個9)
+- **目標**: 99.9% (3個9)
+  > 說明：因 MTTR 目標為 < 15 分鐘，故可用性目標調整為 99.9%（每月允許停機約 43.2 分鐘），以確保指標一致性。
 - **測量**: 運行時間 / (運行時間 + 停機時間)
 - **報告**: 每月
 
 #### 平均修復時間（MTTR）
 - **目標**: < 15 分鐘
+  > 說明：如需維持 99.99% 可用性，MTTR 需降至 < 5 分鐘；本範例以 99.9% 可用性搭配 MTTR < 15 分鐘。
 - **測量**: 從故障檢測到完全恢復的時間
 - **報告**: 每週
 
@@ -400,7 +402,10 @@ def calculate_alert_severity(metric, threshold):
 - [x] 監控和告警機制
 - [x] 事件響應計劃
 - [x] 備份和災難恢復
-- [x] 審計日誌保留（90天+）
+- [x] 審計日誌保留
+    - 操作日誌：90 天
+    - 安全事件日誌：1 年
+    - 合規相關日誌：7 年（或依法規要求）
 
 #### ISO 27001 合規要求
 - [x] 資訊安全政策

@@ -224,12 +224,14 @@ docker system df
 
 # 建議清理（如果超過 80%）
 USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
-if [ "$USAGE" -gt 80 ]; then
+if [[ "$USAGE" =~ ^[0-9]+$ ]] && [ "$USAGE" -gt 80 ]; then
   echo "⚠️  磁盤使用超過 80%，建議清理"
   echo "清理建議:"
   echo "  - docker system prune -a"
   echo "  - 清理舊日誌文件"
   echo "  - 歸檔舊報告"
+elif [ -z "$USAGE" ]; then
+  echo "⚠️  無法獲取磁盤使用率"
 fi
 
 # 內存趨勢
@@ -253,7 +255,7 @@ echo ""
 # 1. 工作流程執行統計
 echo "1️⃣ 工作流程執行統計（過去30天）:"
 gh run list --workflow=autonomous-ci-guardian.yml --limit 1000 --json status,conclusion,createdAt \
-  | jq '[.[] | select(.createdAt > (now - 30*24*3600 | todate))] | 
+  | jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 30*24*3600))] | 
          group_by(.conclusion) | 
          map({conclusion: .[0].conclusion, count: length})'
 
@@ -300,9 +302,10 @@ echo "=== 審計完成 ==="
 
 echo "=== 災難恢復測試 ==="
 
-# 1. 備份當前狀態
-echo "1. 備份當前狀態..."
-docker-compose exec -T db pg_dump > backup-$(date +%Y%m%d).sql
+# 1. 備份當前狀態（加密）
+echo "1. 備份當前狀態（加密）..."
+# 備份檔案將壓縮並以 AES-256-CBC 加密，密碼請設定 PG_BACKUP_PASS 環境變數
+docker-compose exec -T db pg_dump -U postgres | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:PG_BACKUP_PASS > backup-$(date +%Y%m%d).sql.gz.enc
 git tag dr-test-$(date +%Y%m%d)
 
 # 2. 模擬故障
@@ -591,7 +594,13 @@ git secrets --scan || echo "需要安裝 git-secrets"
 # 4. 檢查不安全的配置
 echo ""
 echo "4. 配置安全檢查..."
-grep -r "password\|secret\|key" docker-compose.yml .env 2>/dev/null || echo "✅ 無明文密鑰"
+INSECURE_FILES=$(grep -l "password\|secret\|key" docker-compose.yml .env 2>/dev/null || echo "")
+if [ -n "$INSECURE_FILES" ]; then
+  echo "⚠️  以下檔案可能包含明文密鑰（請人工審查）："
+  echo "$INSECURE_FILES"
+else
+  echo "✅ 無明文密鑰"
+fi
 
 # 5. 檢查權限設置
 echo ""
@@ -651,8 +660,19 @@ cp -r docs/ "$BACKUP_DIR/$TIMESTAMP/"
 cp docker-compose.yml "$BACKUP_DIR/$TIMESTAMP/"
 
 # 3. 備份數據庫
-docker-compose exec -T db pg_dump -U postgres > "$BACKUP_DIR/$TIMESTAMP/database.sql"
-
+# 檢查 docker-compose.yml 是否有 db 服務且 image 為 postgres
+DB_SERVICE=$(docker-compose config --services | grep '^db$')
+DB_IMAGE=$(docker-compose config | awk '/services:/,0' | awk '/db:/,0' | grep 'image:' | awk '{print $2}')
+if [ -n "$DB_SERVICE" ] && [[ "$DB_IMAGE" == *postgres* ]]; then
+  docker-compose exec -T db pg_dump -U postgres > "$BACKUP_DIR/$TIMESTAMP/database.sql" 2> "$BACKUP_DIR/$TIMESTAMP/database.err"
+  if [ $? -eq 0 ]; then
+    echo "✅ 資料庫備份成功"
+  else
+    echo "⚠️  資料庫備份失敗，請檢查 $BACKUP_DIR/$TIMESTAMP/database.err"
+  fi
+else
+  echo "⚠️  未找到 PostgreSQL 資料庫服務 (db)，跳過資料庫備份"
+fi
 # 4. 備份工件
 cp -r artifacts/ "$BACKUP_DIR/$TIMESTAMP/"
 
@@ -705,7 +725,18 @@ cp -r "$RESTORE_DIR"/*/docs/ .
 cp "$RESTORE_DIR"/*/docker-compose.yml .
 
 # 4. 恢復數據庫
-cat "$RESTORE_DIR"/*/database.sql | docker-compose exec -T db psql -U postgres
+BACKUP_SUBDIR=$(ls -1d "$RESTORE_DIR"/*/ | head -1)
+if [ -f "$BACKUP_SUBDIR/database.sql" ]; then
+  cat "$BACKUP_SUBDIR/database.sql" | docker-compose exec -T db psql -U postgres
+  if [ $? -eq 0 ]; then
+    echo "✅ 資料庫恢復成功"
+  else
+    echo "❌ 資料庫恢復失敗"
+    exit 1
+  fi
+else
+  echo "⚠️  未找到資料庫備份檔案"
+fi
 
 # 5. 重啟服務
 docker-compose up -d

@@ -93,8 +93,8 @@ jobs:
       - name: 🚨 Alert on diagnostics failure
         if: steps.health-check.outputs.passed != 'true'
         run: |
-          echo "::error::系統自我診斷失敗，請檢查缺失的工具"
-          cat diagnostics.json | jq '.missing_tools'
+          MISSING_TOOLS=$(cat diagnostics.json | jq -r '.missing_tools | join(", ")')
+          echo "::error::系統自我診斷失敗，缺失以下工具: $MISSING_TOOLS"
 
   predictive-failure-detection:
     needs: [self-diagnostics]
@@ -236,7 +236,9 @@ jobs:
                 echo '{"metadata":{"vulnerabilities":{"total":-1,"critical":-1}},"error":"scan_failed"}' > audit.json
               fi
               ATTEMPT=$((ATTEMPT + 1))
-              sleep 5
+              BACKOFF=$((2 ** (ATTEMPT - 2)))
+              echo "⏳ 等待 $BACKOFF 秒後重試..."
+              sleep $BACKOFF
             fi
           done
 
@@ -366,7 +368,10 @@ jobs:
                 exit 1
               fi
               ATTEMPT=$((ATTEMPT + 1))
-              sleep 10
+              # 指數退避：5s, 10s, 20s...
+              BACKOFF=$((5 * (2 ** (ATTEMPT - 2))))
+              echo "等待 $BACKOFF 秒後重試..."
+              sleep $BACKOFF
             fi
           done
 
@@ -407,14 +412,24 @@ jobs:
             fi
           done
 
+          # 健康檢查失敗時立即退出
+          if [ "$HEALTH_OK" = false ]; then
+            echo "❌ 健康檢查失敗"
+            exit 1
+          fi
           # 性能檢查
           if [ "$HEALTH_OK" = true ]; then
             RESPONSE_TIME=$(curl -w '%{time_total}' -o /dev/null -s -m 10 "$HEALTH_URL" 2>/dev/null || echo "999")
             echo "響應時間：${RESPONSE_TIME}s"
             
-            # 使用 awk 進行浮點數比較，不依賴 bc
-            if awk -v rt="$RESPONSE_TIME" 'BEGIN {exit !(rt > 1.0)}'; then
-              echo "⚠️  性能警告：$SERVICE 響應時間 ${RESPONSE_TIME}s（閾值：1.0s）"
+            # 僅在響應時間為有效數字時才進行性能比較
+            if [[ "$RESPONSE_TIME" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+              # 使用 awk 進行浮點數比較，不依賴 bc
+              if awk -v rt="$RESPONSE_TIME" 'BEGIN {exit !(rt > 1.0)}'; then
+                echo "⚠️  性能警告：$SERVICE 響應時間 ${RESPONSE_TIME}s（閾值：1.0s）"
+              fi
+            else
+              echo "⚠️  無法測量響應時間（連接失敗或格式錯誤）"
             fi
           fi
 
@@ -799,20 +814,28 @@ jobs:
           cat > calculate_metrics.py << 'PYCODE'
           import json
           from datetime import datetime
-
+          import os
+          # 動態計算工作流指標（此範例假設有 6 個 job，僅 1 個成功，其餘失敗/略過）
+          total_jobs = 6
+          successful_jobs = int(os.environ.get("SUCCESSFUL_JOBS", "1"))
+          failed_jobs = int(os.environ.get("FAILED_JOBS", str(total_jobs - successful_jobs)))
+          skipped_jobs = int(os.environ.get("SKIPPED_JOBS", "0"))
+          # SLA 可用性計算：成功 job / 總 job
+          current_availability = successful_jobs / total_jobs if total_jobs > 0 else 0.0
+          # MTTR/MTBF 暫以靜態值，並註明為基準值
           metrics = {
               "timestamp": datetime.utcnow().isoformat() + "Z",
               "workflow_metrics": {
-                  "total_jobs": 6,
-                  "successful_jobs": 0,
-                  "failed_jobs": 0,
-                  "skipped_jobs": 0
+                  "total_jobs": total_jobs,
+                  "successful_jobs": successful_jobs,
+                  "failed_jobs": failed_jobs,
+                  "skipped_jobs": skipped_jobs
               },
               "sla_metrics": {
                   "availability_target": 0.9999,
-                  "current_availability": 0.0,
-                  "mttr_minutes": 0,
-                  "mtbf_hours": 0
+                  "current_availability": current_availability,
+                  "mttr_minutes": 0,  # 靜態基準值，尚未動態計算
+                  "mtbf_hours": 0     # 靜態基準值，尚未動態計算
               },
               "operational_metrics": {
                   "deployment_frequency": "daily",
