@@ -381,13 +381,14 @@ jobs:
           fi
 
           echo "監控金絲雀部署，最長 5 分鐘..."
-          for i in {1..60}; do
+          for i in $(seq 1 60); do
             ERROR_RATE=$(curl -s http://localhost:8080/metrics | grep error_rate | awk '{print $NF}' || echo "0")
             if [ -z "$ERROR_RATE" ]; then
               echo "❌ 無法取得錯誤率，假定為失敗"
               ERROR_RATE="1.0"
             fi
-            if (( $(echo "$ERROR_RATE > 0.01" | bc -l 2>/dev/null) )); then
+            # 使用 awk 進行浮點數比較，更具可攜性
+            if [ "$(echo "$ERROR_RATE 0.01" | awk '{print ($1 > $2)}')" = "1" ]; then
               echo "❌ 金絲雀部署失敗，錯誤率 $ERROR_RATE（第 ${i} 次檢查）"
               exit 1
             fi
