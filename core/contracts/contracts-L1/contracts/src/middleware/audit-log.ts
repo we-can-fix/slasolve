@@ -10,6 +10,16 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 
 /**
+ * 擴展的 Request 類型，包含可選的用戶資訊
+ */
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
  * 審計日誌條目
  */
 interface AuditLogEntry {
@@ -21,15 +31,15 @@ interface AuditLogEntry {
   userAgent: string;          // User Agent
   method: string;             // HTTP 方法
   path: string;               // 請求路徑
-  query?: Record<string, any>; // 查詢參數
-  body?: any;                 // 請求主體 (已清理敏感數據)
+  query?: Record<string, unknown>; // 查詢參數
+  body?: unknown;             // 請求主體 (已清理敏感數據)
   statusCode?: number;        // 回應狀態碼
   responseTime?: number;      // 回應時間 (ms)
   error?: string;             // 錯誤訊息
   action?: string;            // 動作類型 (CREATE, READ, UPDATE, DELETE)
   resource?: string;          // 資源類型
   result?: 'SUCCESS' | 'FAILURE';  // 結果
-  metadata?: Record<string, any>;  // 額外元數據
+  metadata?: Record<string, unknown>;  // 額外元數據
 }
 
 /**
@@ -87,14 +97,22 @@ const defaultConfig: Required<Omit<AuditLogConfig, 'logHandler'>> = {
  * 清理敏感數據
  */
 function sanitizeData(
-  data: any,
+  data: unknown,
   sensitiveFields: string[]
-): any {
+): unknown {
   if (!data || typeof data !== 'object') {
     return data;
   }
 
-  const sanitized = Array.isArray(data) ? [...data] : { ...data };
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeData(item, sensitiveFields));
+  }
+
+  // 僅處理純物件，排除特殊物件 (Date, Map, Set, 類別實例等)
+  if (Object.getPrototypeOf(data) !== Object.prototype) {
+    return data;
+  }
+  const sanitized: Record<string, unknown> = { ...(data as Record<string, unknown>) };
 
   for (const key in sanitized) {
     if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
@@ -194,8 +212,9 @@ export function createAuditLogger(
     };
 
     // 記錄用戶 ID (如果已認證)
-    if ((req as any).user?.id) {
-      logEntry.userId = (req as any).user.id;
+    const authReq = req as AuthenticatedRequest;
+    if (authReq.user?.id) {
+      logEntry.userId = authReq.user.id;
     }
 
     // 記錄請求主體
@@ -215,16 +234,17 @@ export function createAuditLogger(
 
     // 攔截 res.json 以記錄回應
     const originalJson = res.json.bind(res);
-    res.json = function (body: any): Response {
+    res.json = function (body: unknown): Response {
       logEntry.statusCode = res.statusCode;
       logEntry.responseTime = Date.now() - startTime;
       logEntry.result = res.statusCode < 400 ? 'SUCCESS' : 'FAILURE';
 
       // 記錄錯誤訊息
-      if (res.statusCode >= 400 && body?.error) {
-        logEntry.error = typeof body.error === 'string' 
-          ? body.error 
-          : JSON.stringify(body.error);
+      if (res.statusCode >= 400 && body && typeof body === 'object' && 'error' in body) {
+        const errorBody = body as { error: unknown };
+        logEntry.error = typeof errorBody.error === 'string' 
+          ? errorBody.error 
+          : JSON.stringify(errorBody.error);
       }
 
       // 記錄回應主體 (可選)
@@ -274,8 +294,8 @@ export class AuditLogQuery {
    * 根據用戶 ID 查詢審計日誌
    */
   static async findByUserId(
-    userId: string,
-    limit: number = 100
+    _userId: string,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     // 實現依賴於實際的存儲後端
     // 這裡提供接口定義
@@ -286,9 +306,9 @@ export class AuditLogQuery {
    * 根據時間範圍查詢審計日誌
    */
   static async findByTimeRange(
-    startTime: Date,
-    endTime: Date,
-    limit: number = 100
+    _startTime: Date,
+    _endTime: Date,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     throw new Error('Not implemented - requires storage backend');
   }
@@ -297,8 +317,8 @@ export class AuditLogQuery {
    * 根據動作類型查詢審計日誌
    */
   static async findByAction(
-    action: string,
-    limit: number = 100
+    _action: string,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     throw new Error('Not implemented - requires storage backend');
   }
@@ -307,8 +327,8 @@ export class AuditLogQuery {
    * 根據資源類型查詢審計日誌
    */
   static async findByResource(
-    resource: string,
-    limit: number = 100
+    _resource: string,
+    _limit: number = 100
   ): Promise<AuditLogEntry[]> {
     throw new Error('Not implemented - requires storage backend');
   }

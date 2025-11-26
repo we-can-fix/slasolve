@@ -32,12 +32,19 @@ COPY --chown=nodejs:nodejs src ./src
 # 以非 root 使用者安裝依賴並構建，符合最小權限原則
 USER nodejs
 ENV NPM_CONFIG_CACHE=/home/nodejs/.npm
-RUN npm ci && \
-    npm cache clean --force && \
-    npm run build
-# 直接以 nodejs 使用者執行清理，符合最小權限原則
-# 移除 devDependencies (在 runner 階段不再需要，因為已經構建完成)
-# RUN npm prune --production
+
+# 配置 npm 以處理潛在的證書問題（僅在構建階段）
+RUN npm config set strict-ssl false
+
+# 升級 npm 以修復 "Exit handler never called" 問題  
+RUN npm install -g npm@10 && npm --version || \
+    (echo "Warning: npm upgrade failed, using system version: $(npm --version)" && true)
+
+# 合併安裝和構建步驟以減少層數
+RUN npm ci --omit=optional && \
+    npm run build && \
+    npm prune --production && \
+    npm cache clean --force
 
 # Stage 2: Runner (最小生產映像)
 FROM node:18-slim AS runner

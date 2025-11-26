@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:clean": "npm run clean && npm run build",
     "lint": "eslint src/**/*.ts --max-warnings 0",
     "lint:fix": "eslint src/**/*.ts --fix",
     "test": "jest --passWithNoTests",
@@ -16,8 +17,7 @@
     "sbom": "npm audit --audit-level moderate --json > sbom.json",
     "scan": "npm audit --audit-level high",
     "predeploy": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "clean": "rimraf dist"
   },
   "keywords": [
     "contracts",
