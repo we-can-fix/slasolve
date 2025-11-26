@@ -72,7 +72,7 @@ echo '```'
 # 使用 tree 命令（如果可用）或 find 命令
 if command -v tree &> /dev/null; then
   # 建立排除參數陣列 / Build exclude parameters array
-  TREE_ARGS=(-a -L 5 --dirsfirst --filesfirst)
+  TREE_ARGS=(-a -L 5 --dirsfirst)
   for dir in "${EXCLUDE_DIRS[@]}"; do
     TREE_ARGS+=(-I "${dir}")
   done
