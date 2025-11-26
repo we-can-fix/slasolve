@@ -245,7 +245,7 @@ jobs:
             exit 1
           fi
 
-          CONTAINER_ID=$(docker-compose ps -q "$SERVICE")
+          CONTAINER_ID=$(docker-compose ps -q "$SERVICE" | head -1)
           if [ -n "$CONTAINER_ID" ]; then
             MEMORY=$(docker stats --no-stream "$CONTAINER_ID" | tail -1 | awk '{print $7}')
             echo "內存使用：$MEMORY"
