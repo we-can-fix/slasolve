@@ -96,7 +96,7 @@ compatibility_matrix:
         landing_sequence = self.trigger_emergency_landing(current_state)
         
         self.assertIsNotNone(landing_sequence)
-        self.assertTrue(len(landing_sequence) > 0)
+        self.assertGreater(len(landing_sequence), 0)
     
     @staticmethod
     def fuse_imu_data(imu_data: Dict) -> Dict:
