@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "build:clean": "npm run clean && npm run build",
+    // 用於完整重建（清理後再編譯），取代 prebuild hook
+    "rebuild": "npm run clean && npm run build",
     "lint": "eslint src/**/*.ts --max-warnings 0",
     "lint:fix": "eslint src/**/*.ts --fix",
     "test": "jest --passWithNoTests",
