@@ -15,10 +15,17 @@ A modern platform for managing Service Level Agreements with automated code revi
 - ☁️ **Cloud Delegation** - Distributed task processing with cloud agents
 - 👥 **Auto-Assignment System** - Intelligent responsibility assignment with load balancing and SLA monitoring
 - 🚁 **Autonomous Systems Support** - Specialized for drones, self-driving vehicles, and automated iteration
+- 🏗️ **Five-Skeleton Autonomous Framework** - Complete autonomous drone/self-driving system framework
 
 ## 📁 Structure
 
-- `intelligent-automation/` - **NEW** Multi-agent AI system for autonomous code analysis
+- `autonomous-system/` - **NEW** Five-skeleton autonomous drone/self-driving system framework
+  - `architecture-stability/` - C++ core control layer with ROS 2
+  - `api-governance/` - Python module governance and API contract validation
+  - `testing-compatibility/` - Python + YAML automated testing framework
+  - `security-observability/` - Go microservice for distributed tracing and security monitoring
+  - `docs-examples/` - Complete documentation and governance definitions
+- `intelligent-automation/` - Multi-agent AI system for autonomous code analysis
   - `agents/` - Specialized AI agents (TaskExecutor, RecognitionServer, VisualizationAgent)
   - `pipeline_service.py` - Orchestration service for multi-agent coordination
 - `core/` - Core platform services
@@ -33,6 +40,23 @@ A modern platform for managing Service Level Agreements with automated code revi
   - `AUTO_REVIEW_MERGE.md` - Auto review and merge documentation
 
 ## 🚀 Getting Started
+
+### Autonomous System Quick Start
+
+The autonomous system framework provides complete support for drone and self-driving vehicle development:
+
+```bash
+# Navigate to autonomous system
+cd autonomous-system
+
+# See detailed quickstart guide
+cat docs-examples/QUICKSTART.md
+
+# Install dependencies (Ubuntu 20.04+, Python 3.8+, ROS 2, Go 1.20+)
+# Refer to the detailed guide for complete installation steps
+```
+
+See [Autonomous System Documentation](autonomous-system/README.md) for complete setup instructions.
 
 ### Intelligent Automation Quick Start
 
@@ -93,3 +117,58 @@ curl -X POST http://localhost:3000/api/v1/assignment/assign \
 ```
 
 ## 📚 Documentation
+
+## 🏗️ Autonomous System Framework
+
+The autonomous system framework provides a complete five-skeleton architecture for drone and self-driving vehicle development:
+
+### Five-Skeleton Architecture
+
+1. **架構穩定性骨架 (Architecture Stability)** - C++ + ROS 2
+   - Real-time flight control (100Hz control loop)
+   - IMU sensor fusion
+   - PID controller implementation
+
+2. **API 規格與治理邊界骨架 (API Governance)** - Python
+   - Module responsibility matrix
+   - API contract validation
+   - Dependency chain verification
+
+3. **測試與兼容性骨架 (Testing & Compatibility)** - Python + YAML
+   - Automated test suites
+   - Cross-version compatibility testing
+   - Test report generation
+
+4. **安全性與觀測骨架 (Security & Observability)** - Go
+   - Distributed event logging
+   - Safety monitoring and violation detection
+   - Trace ID for distributed tracing
+
+5. **文件與範例骨架 (Documentation & Examples)** - YAML + Markdown
+   - Governance matrix definitions
+   - Complete API documentation
+   - Quickstart guides
+
+### Quick Example
+
+```bash
+# Run API governance validation
+cd autonomous-system/api-governance
+python3 api_contract.py
+
+# Run compatibility tests
+cd ../testing-compatibility
+python3 test_compatibility.py
+
+# Build and run flight controller (requires ROS 2)
+cd ../architecture-stability
+colcon build --symlink-install
+ros2 run autonomy_core flight_controller
+```
+
+For complete documentation, see:
+- [Autonomous System Documentation](autonomous-system/README.md)
+- [Quickstart Guide](autonomous-system/docs-examples/QUICKSTART.md)
+- [API Documentation](autonomous-system/docs-examples/API_DOCUMENTATION.md)
+- [Governance Matrix](autonomous-system/docs-examples/governance_matrix.yaml)
+
