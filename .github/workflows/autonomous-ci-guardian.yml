@@ -199,7 +199,7 @@ jobs:
   critical-service-health-check:
     needs: predictive-failure-detection
     runs-on: ubuntu-latest
-    if: ${{ needs.predictive-failure-detection.outputs.should_proceed == 'True' }}
+    if: ${{ needs.predictive-failure-detection.outputs.proceed == 'true' }}
 
     strategy:
       matrix:
