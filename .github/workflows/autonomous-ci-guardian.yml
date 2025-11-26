@@ -252,8 +252,6 @@ jobs:
       - name: 📊 Record service metrics
         if: always()
         run: |
-          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          cat > metrics.json << 'JSON'
           {
             "service": "${{ matrix.service }}",
             "timestamp": "TIMESTAMP_PLACEHOLDER",
