@@ -410,7 +410,7 @@ jobs:
             "network_latency": "${LATENCY}ms",
             "error_rate": "$ERROR_RATE",
 
-      - name: 📝 準備 docker-compose 檔案
+      - name: 📝 準備 Docker Compose 檔案
         run: |
           if [ ! -f docker-compose.yml ]; then
             echo "version: '3.8'
