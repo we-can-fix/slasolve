@@ -31,7 +31,9 @@ interface RateLimitStore {
 }
 
 /**
- * Redis 客戶端接口 (用於類型安全)
+ * Redis 客戶端接口
+ * 定義與 Redis 客戶端交互所需的最小方法集，支持多種 Redis 客戶端實現
+ * (如 ioredis, node-redis 等)
  */
 interface RedisClientInterface {
   get(key: string): Promise<string | null>;
@@ -40,7 +42,8 @@ interface RedisClientInterface {
 }
 
 /**
- * Redis Multi 接口
+ * Redis Multi/Pipeline 接口
+ * 用於批量執行 Redis 命令的事務或管道操作
  */
 interface RedisMultiInterface {
   incr(key: string): RedisMultiInterface;
