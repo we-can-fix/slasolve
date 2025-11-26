@@ -1,4 +1,4 @@
-// src/observability/event_logger.go
+// autonomous-system/security-observability/observability/event_logger.go
 package observability
 
 import (

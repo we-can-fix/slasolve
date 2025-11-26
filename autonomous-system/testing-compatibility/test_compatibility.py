@@ -53,9 +53,9 @@ test_suites:
         timeout_ms: 100
 
 compatibility_matrix:
-  python_versions: ["3.8", "3.9", "3.10", "3.11"]
+  python_versions: ["3.8", "3.9", "3.10", "3.11", "3.12"]
   ros2_versions: ["humble", "iron", "jazzy"]
-  os_platforms: ["ubuntu_20.04", "ubuntu_22.04"]
+  os_platforms: ["ubuntu_20.04", "ubuntu_22.04", "ubuntu_24.04"]
 """
         return yaml.safe_load(config_yaml)
     

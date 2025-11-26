@@ -4,7 +4,8 @@ package main
 import (
 	"fmt"
 	"time"
-	"./observability"
+	
+	"github.com/we-can-fix/slasolve/autonomous-system/security-observability/observability"
 )
 
 func main() {

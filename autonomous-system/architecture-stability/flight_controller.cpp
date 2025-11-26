@@ -1,4 +1,4 @@
-// src/autonomy_core/src/flight_controller.cpp
+// autonomous-system/architecture-stability/flight_controller.cpp
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "sensor_msgs/msg/imu.hpp"

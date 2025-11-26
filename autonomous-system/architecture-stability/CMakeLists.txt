@@ -17,7 +17,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 # 創建執行檔
-add_executable(flight_controller src/flight_controller.cpp)
+add_executable(flight_controller flight_controller.cpp)
 ament_target_dependencies(flight_controller
   rclcpp
   geometry_msgs
